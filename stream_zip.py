@@ -132,6 +132,9 @@ def stream_zip(files, chunk_size=65536):
                     file_offset,
                     0  # Disk number
                 )
+            external_attr = \
+                (perms << 16) | \
+                (0x10 if name_encoded[-1:] == b'/' else 0x0)  # MS-DOS directory
             yield from _(central_directory_header_struct.pack(
                 45,                 # Version
                 45,                 # Version
@@ -146,7 +149,7 @@ def stream_zip(files, chunk_size=65536):
                 0,                  # File comment length
                 0xffff,             # Disk number - sinze zip64
                 0,                  # Internal file attributes - is binary
-                perms << 16,        # External file attributes
+                external_attr,
                 0xffffffff,         # Offset of local header - sinze zip64
             ))
             yield from _(name_encoded)
