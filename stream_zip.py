@@ -79,7 +79,7 @@ def stream_zip(files, chunk_size=65536):
 
         central_directory_start_offset = offset
 
-        for file_offset, name, modified_at, compressed_size, uncompressed_size, crc_32 in directory:
+        for file_offset, name_encoded, modified_at, compressed_size, uncompressed_size, crc_32 in directory:
             yield from _(central_directory_header_signature)
             directory_extra = \
                 zip64_extra_signature + \

@@ -32,4 +32,4 @@ def test_with_zipfile():
                 with my_zip.open(my_info.filename) as my_file:
                     yield my_info.filename, my_file.read()
 
-    assert [('file-2', b'cd'), ('file-2', b'cd')] == list(extracted())
+    assert [('file-1', b'ab'), ('file-2', b'cd')] == list(extracted())
