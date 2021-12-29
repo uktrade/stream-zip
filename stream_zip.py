@@ -1,9 +1,11 @@
 def stream_zip(files, chunk_size=65536):
 
     def get_zipped_chunks_uneven():
+        local_signature = b'\x50\x4b\x03\x04'
         directory = []
 
         for name, modified_at, chunks in files:
+            yield local_signature
             name_encoded = name.encode()
             directory.append((name_encoded, modified_at))
             yield name_encoded

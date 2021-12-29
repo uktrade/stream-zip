@@ -9,5 +9,9 @@ def test_dummy():
         yield 'file-1', now, (b'a', b'b')
         yield 'file-2', now, (b'c', b'd')
 
-    expected = b'file-1abfile-2cdfile-12021-01-01 21:01:12file-22021-01-01 21:01:12'
+    expected = \
+        b'\x50\x4b\x03\x04file-1ab' + \
+        b'\x50\x4b\x03\x04file-2cd' + \
+        b'file-12021-01-01 21:01:12' + \
+        b'file-22021-01-01 21:01:12'
     assert expected == b''.join(stream_zip(files()))
