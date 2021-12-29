@@ -1,5 +1,6 @@
 from datetime import datetime
 from io import BytesIO
+import os
 from zipfile import ZipFile
 
 import pytest
@@ -55,3 +56,16 @@ def test_exception_propagates():
     with pytest.raises(Exception,  match='From generator'):
         for chunk in stream_zip(files()):
             pass
+
+def test_chunk_sizes():
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+
+    def files():
+        yield 'file-1', now, (os.urandom(1000000),)
+
+    def get_sizes():
+        for chunk in stream_zip(files()):
+            yield len(chunk)
+
+    sizes = set(list(get_sizes())[:-1])
+    assert sizes == {65536}
