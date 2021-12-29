@@ -29,7 +29,6 @@ def stream_zip(files, chunk_size=65536):
                 len(name_encoded),
                 len(extra),
             )
-            directory.append((name_encoded, modified_at))
             yield name_encoded
             yield extra
 
@@ -48,6 +47,8 @@ def stream_zip(files, chunk_size=65536):
             if compressed_chunk:
                 compressed_size += len(compressed_chunk)
                 yield compressed_chunk
+
+            directory.append((name_encoded, modified_at))
 
         for name, modified_at in directory:
             yield name
