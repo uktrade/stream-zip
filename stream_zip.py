@@ -36,7 +36,7 @@ def stream_zip(files, chunk_size=65536):
             uncompressed_size = 0
             compressed_size = 0
             crc_32 = zlib.crc32(b'')
-            compress_obj = zlib.compressobj(wbits=15, level=9)
+            compress_obj = zlib.compressobj(wbits=-zlib.MAX_WBITS, level=9)
             for chunk in chunks:
                 uncompressed_size += len(chunk)
                 crc_32 = zlib.crc32(chunk, crc_32)
