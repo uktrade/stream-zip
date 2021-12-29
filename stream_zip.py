@@ -85,13 +85,13 @@ def stream_zip(files, chunk_size=65536):
                 )
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
-                45,              # Version
-                b'\x08\x00',     # Flags - data descriptor
-                8,               # Compression - deflate
-                mod_at_encoded,  # Modification time and date
-                0,               # CRC32 - 0 since data descriptor
-                0xffffffff,      # Compressed size - since zip64
-                0xffffffff,      # Uncompressed size - since zip64
+                45,           # Version
+                b'\x08\x00',  # Flags - data descriptor
+                8,            # Compression - deflate
+                mod_at_encoded,
+                0,            # CRC32 - 0 since data descriptor
+                0xffffffff,   # Compressed size - since zip64
+                0xffffffff,   # Uncompressed size - since zip64
                 len(name_encoded),
                 len(local_extra),
             ))
