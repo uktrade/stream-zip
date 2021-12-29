@@ -6,6 +6,7 @@ def stream_zip(files, chunk_size=65536):
 
     def get_zipped_chunks_uneven():
         local_header_signature = b'\x50\x4b\x03\x04'
+        data_descriptor_signature = b'PK\x07\x08'
         directory_header_signature = b'\x50\x4b\x01\x02'
         zip64_size_signature = b'\x01\x00'
         local_header_struct = Struct('<H2sHHHIIIHH')
@@ -49,7 +50,7 @@ def stream_zip(files, chunk_size=65536):
                 compressed_size += len(compressed_chunk)
                 yield compressed_chunk
 
-            yield b'PK\x07\x08'
+            yield data_descriptor_signature
             yield Struct('<IQQ').pack(crc_32, compressed_size, uncompressed_size)
 
             directory.append((name_encoded, modified_at))
