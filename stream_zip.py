@@ -9,8 +9,8 @@ def stream_zip(files, chunk_size=65536):
         data_descriptor_signature = b'PK\x07\x08'
         directory_header_signature = b'\x50\x4b\x01\x02'
         zip64_size_signature = b'\x01\x00'
-        file_header_struct = Struct('<H2sHHHIIIHH')
-        dir_header_struct = Struct('<HHHII')
+        local_file_header_struct = Struct('<H2sHHHIIIHH')
+        dir_file_header_struct = Struct('<HH2sHHHIIIHHHHHII')
         directory = []
 
         for name, modified_at, chunks in files:
@@ -20,7 +20,7 @@ def stream_zip(files, chunk_size=65536):
                 Struct('<H').pack(16) + \
                 Struct('<QQ').pack(0, 0)  # Compressed and uncompressed sizes, 0 since data descriptor
             yield local_header_signature
-            yield file_header_struct.pack(
+            yield local_file_header_struct.pack(
                 45,                 # Version
                 b'\x08\x00',        # Flags - data descriptor
                 8,                  # Compression - deflate
@@ -63,7 +63,8 @@ def stream_zip(files, chunk_size=65536):
                 Struct('<H').pack(16) + \
                 Struct('<QQ').pack(compressed_size, uncompressed_size)
             yield local_header_signature
-            yield file_header_struct.pack(
+            yield dir_file_header_struct.pack(
+                45,                 # Version
                 45,                 # Version
                 b'\x08\x00',        # Flags - data descriptor
                 8,                  # Compression - deflate
@@ -74,13 +75,11 @@ def stream_zip(files, chunk_size=65536):
                 4294967295,         # Uncompressed size - since zip64
                 len(name_encoded),
                 len(directory_extra),
-            )
-            yield dir_header_struct.pack(
-                0,           # File comment length
-                0xffff,      # Disk number - sinze zip64
-                0,           # Internal file attributes - is binary
-                0,           # External file attributes
-                0xffffffff,  # Offset of local header - sinze zip64
+                0,                  # File comment length
+                0xffff,             # Disk number - sinze zip64
+                0,                  # Internal file attributes - is binary
+                0,                  # External file attributes
+                0xffffffff,         # Offset of local header - sinze zip64
             )
             yield name_encoded
             yield directory_extra
