@@ -77,11 +77,11 @@ def stream_zip(files, chunk_size=65536):
             local_extra = \
                 zip64_extra_signature + \
                 zip64_extra_struct.pack(
-                    28,
-                    0,  # Uncompressed size - 0 since data descriptor
-                    0,  # Compressed size - 0 since data descriptor
+                    28,  # Size of extra
+                    0,   # Uncompressed size - 0 since data descriptor
+                    0,   # Compressed size - 0 since data descriptor
                     file_offset,
-                    0,  # Disk number
+                    0,   # Disk number
                 )
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
@@ -126,11 +126,11 @@ def stream_zip(files, chunk_size=65536):
             directory_extra = \
                 zip64_extra_signature + \
                 zip64_extra_struct.pack(
-                    28,
+                    28,  # Size of extra
                     uncompressed_size,
                     compressed_size,
                     file_offset,
-                    0,  # Disk number
+                    0,   # Disk number
                 )
             external_attr = \
                 (perms << 16) | \
