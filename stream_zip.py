@@ -6,6 +6,7 @@ def stream_zip(files, chunk_size=65536):
 
     def get_zipped_chunks_uneven():
         local_header_signature = b'\x50\x4b\x03\x04'
+        directory_header_signature = b'\x50\x4b\x01\x02'
         zip64_size_signature = b'\x01\x00'
         local_header_struct = Struct('<H2sHHHIIIHH')
         directory = []
@@ -54,6 +55,7 @@ def stream_zip(files, chunk_size=65536):
             directory.append((name_encoded, modified_at))
 
         for name, modified_at in directory:
+            yield directory_header_signature
             yield name
             yield str(modified_at).encode()
 
