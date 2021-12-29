@@ -33,19 +33,26 @@ def stream_zip(files, chunk_size=65536):
 
     def get_zipped_chunks_uneven():
         local_header_signature = b'PK\x03\x04'
+        local_header_struct = Struct('<H2sHHHIIIHH')
+
         data_descriptor_signature = b'PK\x07\x08'
-        central_directory_header_signature = b'PK\x01\x02'
-        zip64_end_of_central_directory_signature = b'PK\x06\x06'
-        zip64_end_of_central_directory_locator_signature= b'PK\x06\x07'
-        end_of_central_directory_signature = b'PK\x05\x06'
         data_descriptor_struct = Struct('<IQQ')
+
+        central_directory_header_signature = b'PK\x01\x02'
+        central_directory_file_header_struct = Struct('<HH2sHHHIIIHHHHHII')
+
+        zip64_end_of_central_directory_signature = b'PK\x06\x06'
+        zip64_end_of_central_directory_struct = Struct('<QHHIIQQQQ')
+
+        zip64_end_of_central_directory_locator_signature= b'PK\x06\x07'
+        zip64_end_of_central_directory_locator = Struct('<IQI')
+
+        end_of_central_directory_signature = b'PK\x05\x06'
+        end_of_central_directory_struct = Struct('<HHHHIIH')
+        
         zip64_extra_signature = b'\x01\x00'
         zip64_extra_struct = Struct('<HQQQI')
-        local_header_struct = Struct('<H2sHHHIIIHH')
-        central_directory_file_header_struct = Struct('<HH2sHHHIIIHHHHHII')
-        zip64_end_of_central_directory_struct = Struct('<QHHIIQQQQ')
-        zip64_end_of_central_directory_locator = Struct('<IQI')
-        end_of_central_directory_struct = Struct('<HHHHIIH')
+
         directory = []
 
         offset = 0
