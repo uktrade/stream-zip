@@ -136,8 +136,8 @@ def stream_zip(files, chunk_size=65536):
                 (perms << 16) | \
                 (0x10 if name_encoded[-1:] == b'/' else 0x0)  # MS-DOS directory
             yield from _(central_directory_header_struct.pack(
-                45,              # Version
-                45,              # Version
+                45,              # Version made by
+                45,              # Version required
                 b'\x08\x00',     # Flags - data descriptor
                 8,               # Compression - deflate
                 mod_at_encoded,  # Modification time and date
@@ -163,8 +163,8 @@ def stream_zip(files, chunk_size=65536):
         yield from _(zip64_end_of_central_directory_signature)
         yield from _(zip64_end_of_central_directory_struct.pack(
             44,  # Size of zip64 end of central directory record
-            45,  # Version
-            45,  # Version
+            45,  # Version made by
+            45,  # Version required
             0,   # Disk number
             0,   # Disk number with central directory
             len(directory),
