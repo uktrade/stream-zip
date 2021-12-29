@@ -3,7 +3,7 @@ from stream_unzip import stream_unzip
 from stream_zip import stream_zip
 
 
-def test_zip():
+def test_with_stream_unzip():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
 
     def files():
