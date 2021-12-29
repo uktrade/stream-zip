@@ -36,3 +36,8 @@ def unzipped_files():
 for zipped_chunk in stream_zip(unzipped_files()):
     print(zipped_chunk)
 ```
+
+
+## Limitations
+
+It's not possible to _completely_ stream-write ZIP files. Small bits of metadata for each member file, such as its name, must be placed at the _end_ of the ZIP. In order to do this, stream-unzip buffers this metadata in memory until it can be output.
