@@ -146,7 +146,7 @@ def stream_zip(files, chunk_size=65536):
                 0,                  # File comment length
                 0xffff,             # Disk number - sinze zip64
                 0,                  # Internal file attributes - is binary
-                0,                  # External file attributes
+                0o600 << 16,        # External file attributes
                 0xffffffff,         # Offset of local header - sinze zip64
             ))
             yield from _(name_encoded)
