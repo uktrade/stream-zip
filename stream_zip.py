@@ -21,11 +21,17 @@ def stream_zip(files, chunk_size=65536):
             yield chunk
 
         for name, modified_at, chunks in files:
+            file_offset = offset
             name_encoded = name.encode()
             local_extra = \
                 zip64_size_signature + \
-                Struct('<H').pack(16) + \
-                Struct('<QQ').pack(0, 0)  # Compressed and uncompressed sizes, 0 since data descriptor
+                Struct('<H').pack(28) + \
+                Struct('<QQQI').pack(
+                    0,  # Uncompressed sizes - 0 since data descriptor
+                    0,  # Compressed size - 0 since data descriptor
+                    file_offset,
+                    0   # Disk number
+                )
             yield from _(local_header_signature)
             yield from _(local_file_header_struct.pack(
                 45,                 # Version
@@ -61,14 +67,19 @@ def stream_zip(files, chunk_size=65536):
             yield from _(data_descriptor_signature)
             yield from _(Struct('<IQQ').pack(crc_32, compressed_size, uncompressed_size))
 
-            directory.append((name_encoded, modified_at, compressed_size, uncompressed_size))
+            directory.append((file_offset, name_encoded, modified_at, compressed_size, uncompressed_size))
 
-        for name, modified_at, compressed_size, uncompressed_size in directory:
+        for file_offset, name, modified_at, compressed_size, uncompressed_size in directory:
             yield from _(directory_header_signature)
             directory_extra = \
                 zip64_size_signature + \
-                Struct('<H').pack(16) + \
-                Struct('<QQ').pack(compressed_size, uncompressed_size)
+                Struct('<H').pack(28) + \
+                Struct('<QQQI').pack(
+                    uncompressed_size,
+                    compressed_size,
+                    file_offset,
+                    0  # Disk number
+                )
             yield from _(dir_file_header_struct.pack(
                 45,                 # Version
                 45,                 # Version
