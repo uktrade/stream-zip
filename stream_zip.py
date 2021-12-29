@@ -85,13 +85,13 @@ def stream_zip(files, chunk_size=65536):
                 )
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
-                45,                 # Version
-                b'\x08\x00',        # Flags - data descriptor
-                8,                  # Compression - deflate
-                mod_at_encoded,     # Modification time and date
-                0,                  # CRC32 - 0 since data descriptor
-                0xffffffff,         # Compressed size - since zip64
-                0xffffffff,         # Uncompressed size - since zip64
+                45,              # Version
+                b'\x08\x00',     # Flags - data descriptor
+                8,               # Compression - deflate
+                mod_at_encoded,  # Modification time and date
+                0,               # CRC32 - 0 since data descriptor
+                0xffffffff,      # Compressed size - since zip64
+                0xffffffff,      # Uncompressed size - since zip64
                 len(name_encoded),
                 len(local_extra),
             ))
@@ -136,21 +136,21 @@ def stream_zip(files, chunk_size=65536):
                 (perms << 16) | \
                 (0x10 if name_encoded[-1:] == b'/' else 0x0)  # MS-DOS directory
             yield from _(central_directory_header_struct.pack(
-                45,                 # Version
-                45,                 # Version
-                b'\x08\x00',        # Flags - data descriptor
-                8,                  # Compression - deflate
-                mod_at_encoded,     # Modification time and date
-                crc_32,             # CRC32
-                0xffffffff,         # Compressed size - since zip64
-                0xffffffff,         # Uncompressed size - since zip64
+                45,              # Version
+                45,              # Version
+                b'\x08\x00',     # Flags - data descriptor
+                8,               # Compression - deflate
+                mod_at_encoded,  # Modification time and date
+                crc_32,          # CRC32
+                0xffffffff,      # Compressed size - since zip64
+                0xffffffff,      # Uncompressed size - since zip64
                 len(name_encoded),
                 len(directory_extra),
-                0,                  # File comment length
-                0xffff,             # Disk number - since zip64
-                0,                  # Internal file attributes - is binary
+                0,               # File comment length
+                0xffff,          # Disk number - since zip64
+                0,               # Internal file attributes - is binary
                 external_attr,
-                0xffffffff,         # Offset of local header - since zip64
+                0xffffffff,      # Offset of local header - since zip64
             ))
             yield from _(name_encoded)
             yield from _(directory_extra)
@@ -162,11 +162,11 @@ def stream_zip(files, chunk_size=65536):
 
         yield from _(zip64_end_of_central_directory_signature)
         yield from _(zip64_end_of_central_directory_struct.pack(
-            44,            # Size of zip64 end of central directory record
-            45,            # Version
-            45,            # Version
-            0,             # Disk number
-            0,             # Disk number with central directory
+            44,  # Size of zip64 end of central directory record
+            45,  # Version
+            45,  # Version
+            0,   # Disk number
+            0,   # Disk number with central directory
             len(directory),
             len(directory),
             central_directory_size,
