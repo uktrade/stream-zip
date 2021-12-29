@@ -54,7 +54,6 @@ def stream_zip(files, chunk_size=65536):
         zip64_extra_struct = Struct('<HQQQI')
 
         directory = []
-
         offset = 0
 
         def _(chunk):
