@@ -130,7 +130,7 @@ def stream_zip(files, chunk_size=65536):
                     uncompressed_size,
                     compressed_size,
                     file_offset,
-                    0  # Disk number
+                    0,  # Disk number
                 )
             external_attr = \
                 (perms << 16) | \
