@@ -12,6 +12,7 @@ def stream_zip(files, chunk_size=65536):
         zip64_end_of_central_directory_locator_signature= b'PK\x06\x07'
         end_of_central_directory_signature = b'PK\x05\x06'
         zip64_extra_signature = b'\x01\x00'
+        zip64_extra_struct = Struct('<HQQQI')
         local_file_header_struct = Struct('<H2sHHHIIIHH')
         central_directory_file_header_struct = Struct('<HH2sHHHIIIHHHHHII')
         zip64_end_of_central_directory_struct = Struct('<QHHIIQQQQ')
@@ -31,7 +32,7 @@ def stream_zip(files, chunk_size=65536):
             name_encoded = name.encode()
             local_extra = \
                 zip64_extra_signature + \
-                Struct('<HQQQI').pack(
+                zip64_extra_struct.pack(
                     28,
                     0,  # Uncompressed sizes - 0 since data descriptor
                     0,  # Compressed size - 0 since data descriptor
@@ -81,7 +82,7 @@ def stream_zip(files, chunk_size=65536):
             yield from _(central_directory_header_signature)
             directory_extra = \
                 zip64_extra_signature + \
-                Struct('<HQQQI').pack(
+                zip64_extra_struct.pack(
                     28,
                     uncompressed_size,
                     compressed_size,
