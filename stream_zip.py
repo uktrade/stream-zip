@@ -72,7 +72,7 @@ def stream_zip(files, chunk_size=65536):
                 (modified_at.hour << 11),
                 modified_at.day | \
                 (modified_at.month << 5) | \
-                (modified_at.year - 1980) << 9
+                (modified_at.year - 1980) << 9,
             )
             local_extra = \
                 zip64_extra_signature + \
