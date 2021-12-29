@@ -31,8 +31,8 @@ def stream_zip(files, chunk_size=65536):
             name_encoded = name.encode()
             local_extra = \
                 zip64_size_signature + \
-                Struct('<H').pack(28) + \
-                Struct('<QQQI').pack(
+                Struct('<HQQQI').pack(
+                    28,
                     0,  # Uncompressed sizes - 0 since data descriptor
                     0,  # Compressed size - 0 since data descriptor
                     file_offset,
@@ -81,8 +81,8 @@ def stream_zip(files, chunk_size=65536):
             yield from _(central_directory_header_signature)
             directory_extra = \
                 zip64_size_signature + \
-                Struct('<H').pack(28) + \
-                Struct('<QQQI').pack(
+                Struct('<HQQQI').pack(
+                    28,
                     uncompressed_size,
                     compressed_size,
                     file_offset,
