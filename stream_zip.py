@@ -48,6 +48,9 @@ def stream_zip(files, chunk_size=65536):
                 compressed_size += len(compressed_chunk)
                 yield compressed_chunk
 
+            yield b'PK\x07\x08'
+            yield Struct('<IQQ').pack(crc_32, compressed_size, uncompressed_size)
+
             directory.append((name_encoded, modified_at))
 
         for name, modified_at in directory:
