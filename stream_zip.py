@@ -1,4 +1,5 @@
 from struct import Struct
+import zlib
 
 
 def stream_zip(files, chunk_size=65536):
@@ -31,7 +32,22 @@ def stream_zip(files, chunk_size=65536):
             directory.append((name_encoded, modified_at))
             yield name_encoded
             yield extra
-            yield from chunks
+
+            uncompressed_size = 0
+            compressed_size = 0
+            crc_32 = zlib.crc32(b'')
+            compress_obj = zlib.compressobj(wbits=15, level=9)
+            for chunk in chunks:
+                uncompressed_size += len(chunk)
+                crc_32 = zlib.crc32(chunk, crc_32)
+                compressed_chunk = compress_obj.compress(chunk)
+                compressed_size += len(compressed_chunk)
+                yield compressed_chunk
+
+            compressed_chunk = compress_obj.flush()
+            if compressed_chunk:
+                compressed_size += len(compressed_chunk)
+                yield compressed_chunk
 
         for name, modified_at in directory:
             yield name
