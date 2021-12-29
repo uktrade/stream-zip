@@ -81,7 +81,7 @@ def stream_zip(files, chunk_size=65536):
                     0,  # Uncompressed size - 0 since data descriptor
                     0,  # Compressed size - 0 since data descriptor
                     file_offset,
-                    0   # Disk number
+                    0,  # Disk number
                 )
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
