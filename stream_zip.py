@@ -63,7 +63,7 @@ def stream_zip(files, chunk_size=65536):
             offset += len(chunk)
             yield chunk
 
-        for name, modified_at, chunks in files:
+        for name, modified_at, perms, chunks in files:
             file_offset = offset
             name_encoded = name.encode()
             mod_at_encoded = modified_at_struct.pack(
@@ -117,11 +117,11 @@ def stream_zip(files, chunk_size=65536):
             yield from _(data_descriptor_signature)
             yield from _(data_descriptor_struct.pack(crc_32, compressed_size, uncompressed_size))
 
-            directory.append((file_offset, name_encoded, mod_at_encoded, compressed_size, uncompressed_size, crc_32))
+            directory.append((file_offset, name_encoded, mod_at_encoded, perms, compressed_size, uncompressed_size, crc_32))
 
         central_directory_start_offset = offset
 
-        for file_offset, name_encoded, mod_at_encoded, compressed_size, uncompressed_size, crc_32 in directory:
+        for file_offset, name_encoded, mod_at_encoded, perms, compressed_size, uncompressed_size, crc_32 in directory:
             yield from _(central_directory_header_signature)
             directory_extra = \
                 zip64_extra_signature + \
@@ -146,7 +146,7 @@ def stream_zip(files, chunk_size=65536):
                 0,                  # File comment length
                 0xffff,             # Disk number - sinze zip64
                 0,                  # Internal file attributes - is binary
-                0o600 << 16,        # External file attributes
+                perms << 16,        # External file attributes
                 0xffffffff,         # Offset of local header - sinze zip64
             ))
             yield from _(name_encoded)
