@@ -131,7 +131,7 @@ def stream_zip(files, chunk_size=65536):
         yield from _(zip64_end_of_central_directory_locator.pack(
             0,  # Disk number with zip64 end of central directory record
             zip64_end_of_central_directory_offset,
-            1
+            1   # Total number of disks
         ))
 
         yield from _(end_of_central_directory_signature)
