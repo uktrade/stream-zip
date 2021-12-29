@@ -45,7 +45,7 @@ def stream_zip(files, chunk_size=65536):
         zip64_end_of_central_directory_struct = Struct('<QHHIIQQQQ')
 
         zip64_end_of_central_directory_locator_signature= b'PK\x06\x07'
-        zip64_end_of_central_directory_locator = Struct('<IQI')
+        zip64_end_of_central_directory_locator_struct = Struct('<IQI')
 
         end_of_central_directory_signature = b'PK\x05\x06'
         end_of_central_directory_struct = Struct('<HHHHIIH')
@@ -164,7 +164,7 @@ def stream_zip(files, chunk_size=65536):
         ))
 
         yield from _(zip64_end_of_central_directory_locator_signature)
-        yield from _(zip64_end_of_central_directory_locator.pack(
+        yield from _(zip64_end_of_central_directory_locator_struct.pack(
             0,  # Disk number with zip64 end of central directory record
             zip64_end_of_central_directory_offset,
             1   # Total number of disks
