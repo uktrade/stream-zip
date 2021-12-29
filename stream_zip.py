@@ -136,21 +136,21 @@ def stream_zip(files, chunk_size=65536):
                 (perms << 16) | \
                 (0x10 if name_encoded[-1:] == b'/' else 0x0)  # MS-DOS directory
             yield from _(central_directory_header_struct.pack(
-                45,              # Version made by
-                45,              # Version required
-                b'\x08\x00',     # Flags - data descriptor
-                8,               # Compression - deflate
+                45,           # Version made by
+                45,           # Version required
+                b'\x08\x00',  # Flags - data descriptor
+                8,            # Compression - deflate
                 mod_at_encoded,
                 crc_32,
-                0xffffffff,      # Compressed size - since zip64
-                0xffffffff,      # Uncompressed size - since zip64
+                0xffffffff,   # Compressed size - since zip64
+                0xffffffff,   # Uncompressed size - since zip64
                 len(name_encoded),
                 len(directory_extra),
-                0,               # File comment length
-                0xffff,          # Disk number - since zip64
-                0,               # Internal file attributes - is binary
+                0,             # File comment length
+                0xffff,        # Disk number - since zip64
+                0,             # Internal file attributes - is binary
                 external_attr,
-                0xffffffff,      # Offset of local header - since zip64
+                0xffffffff,    # Offset of local header - since zip64
             ))
             yield from _(name_encoded)
             yield from _(directory_extra)
