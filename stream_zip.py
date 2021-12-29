@@ -10,11 +10,13 @@ def stream_zip(files, chunk_size=65536):
         central_directory_header_signature = b'PK\x01\x02'
         zip64_end_of_central_directory_signature = b'PK\x06\x06'
         zip64_end_of_central_directory_locator_signature= b'PK\x06\x07'
+        end_of_central_directory_signature = b'PK\x05\x06'
         zip64_size_signature = b'\x01\x00'
         local_file_header_struct = Struct('<H2sHHHIIIHH')
         central_directory_file_header_struct = Struct('<HH2sHHHIIIHHHHHII')
         zip64_end_of_central_directory_struct = Struct('<QHHIIQQQQ')
         zip64_end_of_central_directory_locator = Struct('<HQH')
+        end_of_central_directory_struct = Struct('<HHHHIIH')
         directory = []
 
         offset = 0
@@ -130,6 +132,17 @@ def stream_zip(files, chunk_size=65536):
             0,  # Disk number with zip64 end of central directory record
             zip64_end_of_central_directory_offset,
             1
+        ))
+
+        yield from _(end_of_central_directory_signature)
+        yield from _(end_of_central_directory_struct.pack(
+            0xffff,      # Since zip64
+            0xffff,      # Since zip64
+            0xffff,      # Since zip64
+            0xffff,      # Since zip64
+            0xffffffff,  # Since zip64
+            0xffffffff,  # Since zip64
+            0,           # ZIP file comment length
         ))
 
     def get_zipped_chunks_even(zipped_chunks):
