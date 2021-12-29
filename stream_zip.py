@@ -62,7 +62,6 @@ def stream_zip(files, chunk_size=65536):
                 zip64_size_signature + \
                 Struct('<H').pack(16) + \
                 Struct('<QQ').pack(compressed_size, uncompressed_size)
-            yield local_header_signature
             yield dir_file_header_struct.pack(
                 45,                 # Version
                 45,                 # Version
