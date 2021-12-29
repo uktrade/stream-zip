@@ -33,13 +33,13 @@ def stream_zip(files, chunk_size=65536):
 
     def get_zipped_chunks_uneven():
         local_header_signature = b'PK\x03\x04'
-        local_header_struct = Struct('<H2sHHHIIIHH')
+        local_header_struct = Struct('<H2sH4sIIIHH')
 
         data_descriptor_signature = b'PK\x07\x08'
         data_descriptor_struct = Struct('<IQQ')
 
         central_directory_header_signature = b'PK\x01\x02'
-        central_directory_header_struct = Struct('<HH2sHHHIIIHHHHHII')
+        central_directory_header_struct = Struct('<HH2sH4sIIIHHHHHII')
 
         zip64_end_of_central_directory_signature = b'PK\x06\x06'
         zip64_end_of_central_directory_struct = Struct('<QHHIIQQQQ')
@@ -78,8 +78,7 @@ def stream_zip(files, chunk_size=65536):
                 45,                 # Version
                 b'\x08\x00',        # Flags - data descriptor
                 8,                  # Compression - deflate
-                0,                  # Modification time
-                0,                  # Modification date
+                b'\x00\x00',        # Modification time and date
                 0,                  # CRC32 - 0 since data descriptor
                 0xffffffff,         # Compressed size - since zip64
                 0xffffffff,         # Uncompressed size - since zip64
@@ -128,8 +127,7 @@ def stream_zip(files, chunk_size=65536):
                 45,                 # Version
                 b'\x08\x00',        # Flags - data descriptor
                 8,                  # Compression - deflate
-                0,                  # Modification time
-                0,                  # Modification date
+                b'\x00\x00',        # Modification time and date
                 crc_32,             # CRC32
                 0xffffffff,         # Compressed size - since zip64
                 0xffffffff,         # Uncompressed size - since zip64
