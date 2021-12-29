@@ -10,6 +10,7 @@ def stream_zip(files, chunk_size=65536):
         directory_header_signature = b'\x50\x4b\x01\x02'
         zip64_size_signature = b'\x01\x00'
         file_header_struct = Struct('<H2sHHHIIIHH')
+        dir_header_struct = Struct('<HHHII')
         directory = []
 
         for name, modified_at, chunks in files:
@@ -73,6 +74,13 @@ def stream_zip(files, chunk_size=65536):
                 4294967295,         # Uncompressed size - since zip64
                 len(name_encoded),
                 len(directory_extra),
+            )
+            yield dir_header_struct.pack(
+                0,           # File comment length
+                0xffff,      # Disk number - sinze zip64
+                0,           # Internal file attributes - is binary
+                0,           # External file attributes
+                0xffffffff,  # Offset of local header - sinze zip64
             )
             yield name_encoded
             yield directory_extra
