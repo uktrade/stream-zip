@@ -1,14 +1,32 @@
+from struct import Struct
+
+
 def stream_zip(files, chunk_size=65536):
 
     def get_zipped_chunks_uneven():
         local_header_signature = b'\x50\x4b\x03\x04'
+        local_header_struct = Struct('<H2sHHHIIIHH')
         directory = []
 
         for name, modified_at, chunks in files:
-            yield local_header_signature
             name_encoded = name.encode()
+            extra = b'dummy'
+            yield local_header_signature
+            yield local_header_struct.pack(
+                45,                 # Version
+                b'\x08\x00',        # Flags - data descriptor
+                8,                  # Compression - deflate
+                0,                  # Modification time
+                0,                  # Modification date
+                0,                  # CRC32 - 0 since data descriptor
+                4294967295,         # Compressed size - 0 since zip64
+                4294967295,         # Uncompressed size - 0 since zip64
+                len(name_encoded),
+                len(extra),
+            )
             directory.append((name_encoded, modified_at))
             yield name_encoded
+            yield extra
             yield from chunks
 
         for name, modified_at in directory:

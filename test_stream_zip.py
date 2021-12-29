@@ -10,8 +10,9 @@ def test_dummy():
         yield 'file-2', now, (b'c', b'd')
 
     expected = \
-        b'\x50\x4b\x03\x04file-1ab' + \
-        b'\x50\x4b\x03\x04file-2cd' + \
-        b'file-12021-01-01 21:01:12' + \
-        b'file-22021-01-01 21:01:12'
+        b'PK\x03\x04-\x00\x08\x00\x08\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff' + \
+        b'\xff\xff\xff\xff\xff\xff\x06\x00\x05\x00file-1dummyabPK\x03\x04-' + \
+        b'\x00\x08\x00\x08\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff' + \
+        b'\xff\xff\xff\xff\xff\x06\x00\x05\x00file-2dummycdfile-12021-01-01 21:01:12f' + \
+        b'ile-22021-01-01 21:01:12'
     assert expected == b''.join(stream_zip(files()))
