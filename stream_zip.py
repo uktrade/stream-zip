@@ -1,8 +1,17 @@
 def stream_zip(files, chunk_size=65536):
 
     def get_zipped_chunks_uneven():
+        directory = []
+
         for name, modified_at, chunks in files:
+            name_encoded = name.encode()
+            directory.append((name_encoded, modified_at))
+            yield name_encoded
             yield from chunks
+
+        for name, modified_at in directory:
+            yield name
+            yield str(modified_at).encode()
 
     def get_zipped_chunks_even(zipped_chunks):
         chunk = b''
