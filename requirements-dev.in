@@ -1,0 +1,3 @@
+-e file:.#egg=stream_zip
+coverage
+pytest
