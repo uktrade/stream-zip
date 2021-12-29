@@ -8,9 +8,11 @@ def stream_zip(files, chunk_size=65536):
         local_header_signature = b'\x50\x4b\x03\x04'
         data_descriptor_signature = b'PK\x07\x08'
         central_directory_header_signature = b'\x50\x4b\x01\x02'
+        zip64_end_of_central_directory_signature = b'PK\x06\x06'
         zip64_size_signature = b'\x01\x00'
         local_file_header_struct = Struct('<H2sHHHIIIHH')
         central_directory_file_header_struct = Struct('<HH2sHHHIIIHHHHHII')
+        zip64_end_of_central_directory_struct = Struct('<QHHIIQQQQ')
         directory = []
 
         offset = 0
@@ -69,6 +71,8 @@ def stream_zip(files, chunk_size=65536):
 
             directory.append((file_offset, name_encoded, modified_at, compressed_size, uncompressed_size))
 
+        central_directory_start_offset = offset
+
         for file_offset, name, modified_at, compressed_size, uncompressed_size in directory:
             yield from _(central_directory_header_signature)
             directory_extra = \
@@ -100,6 +104,22 @@ def stream_zip(files, chunk_size=65536):
             ))
             yield from _(name_encoded)
             yield from _(directory_extra)
+
+        central_directory_end_offset = offset
+        central_directory_size = central_directory_end_offset - central_directory_start_offset
+
+        yield from _(zip64_end_of_central_directory_signature)
+        yield from _(zip64_end_of_central_directory_struct.pack(
+            44,            # Size of zip64 end of central directory record
+            45,            # Version
+            45,            # Version
+            0,             # Disk number
+            0,             # Disk number with central directory
+            len(directory),
+            len(directory),
+            central_directory_size,
+            central_directory_start_offset,
+        ))
 
     def get_zipped_chunks_even(zipped_chunks):
         chunk = b''
