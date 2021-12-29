@@ -5,9 +5,9 @@ import zlib
 def stream_zip(files, chunk_size=65536):
 
     def get_zipped_chunks_uneven():
-        local_header_signature = b'\x50\x4b\x03\x04'
+        local_header_signature = b'PK\x03\x04'
         data_descriptor_signature = b'PK\x07\x08'
-        central_directory_header_signature = b'\x50\x4b\x01\x02'
+        central_directory_header_signature = b'PK\x01\x02'
         zip64_end_of_central_directory_signature = b'PK\x06\x06'
         zip64_end_of_central_directory_locator_signature= b'PK\x06\x07'
         zip64_size_signature = b'\x01\x00'
