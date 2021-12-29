@@ -75,11 +75,11 @@ def stream_zip(files, chunk_size=65536):
             yield from _(data_descriptor_signature)
             yield from _(data_descriptor_struct.pack(crc_32, compressed_size, uncompressed_size))
 
-            directory.append((file_offset, name_encoded, modified_at, compressed_size, uncompressed_size))
+            directory.append((file_offset, name_encoded, modified_at, compressed_size, uncompressed_size, crc_32))
 
         central_directory_start_offset = offset
 
-        for file_offset, name, modified_at, compressed_size, uncompressed_size in directory:
+        for file_offset, name, modified_at, compressed_size, uncompressed_size, crc_32 in directory:
             yield from _(central_directory_header_signature)
             directory_extra = \
                 zip64_extra_signature + \
@@ -97,7 +97,7 @@ def stream_zip(files, chunk_size=65536):
                 8,                  # Compression - deflate
                 0,                  # Modification time
                 0,                  # Modification date
-                0,                  # CRC32 - 0 since data descriptor
+                crc_32,             # CRC32 - 0 since data descriptor
                 4294967295,         # Compressed size - since zip64
                 4294967295,         # Uncompressed size - since zip64
                 len(name_encoded),

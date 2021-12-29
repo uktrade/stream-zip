@@ -26,5 +26,10 @@ def test_with_zipfile():
         yield 'file-1', now, (b'a', b'b')
         yield 'file-2', now, (b'c', b'd')
 
-    with ZipFile(BytesIO(b''.join(stream_zip(files())))) as my_zip:
-        pass
+    def extracted():
+        with ZipFile(BytesIO(b''.join(stream_zip(files())))) as my_zip:
+            for my_info in my_zip.infolist():
+                with my_zip.open(my_info.filename) as my_file:
+                    yield my_info.filename, my_file.read()
+
+    assert [('file-2', b'cd'), ('file-2', b'cd')] == list(extracted())
