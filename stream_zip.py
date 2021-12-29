@@ -39,7 +39,7 @@ def stream_zip(files, chunk_size=65536):
         data_descriptor_struct = Struct('<IQQ')
 
         central_directory_header_signature = b'PK\x01\x02'
-        central_directory_file_header_struct = Struct('<HH2sHHHIIIHHHHHII')
+        central_directory_header_struct = Struct('<HH2sHHHIIIHHHHHII')
 
         zip64_end_of_central_directory_signature = b'PK\x06\x06'
         zip64_end_of_central_directory_struct = Struct('<QHHIIQQQQ')
@@ -124,7 +124,7 @@ def stream_zip(files, chunk_size=65536):
                     file_offset,
                     0  # Disk number
                 )
-            yield from _(central_directory_file_header_struct.pack(
+            yield from _(central_directory_header_struct.pack(
                 45,                 # Version
                 45,                 # Version
                 b'\x08\x00',        # Flags - data descriptor
