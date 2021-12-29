@@ -8,8 +8,10 @@
     # via -r requirements-dev.in
 attrs==21.3.0
     # via pytest
-coverage==6.2
-    # via -r requirements-dev.in
+coverage[toml]==6.2
+    # via
+    #   -r requirements-dev.in
+    #   pytest-cov
 iniconfig==1.1.1
     # via pytest
 packaging==21.3
@@ -21,6 +23,12 @@ py==1.11.0
 pyparsing==3.0.6
     # via packaging
 pytest==6.2.5
+    # via
+    #   -r requirements-dev.in
+    #   pytest-cov
+pytest-cov==3.0.0
     # via -r requirements-dev.in
 toml==0.10.2
     # via pytest
+tomli==2.0.0
+    # via coverage
