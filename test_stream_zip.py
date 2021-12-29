@@ -30,6 +30,6 @@ def test_with_zipfile():
         with ZipFile(BytesIO(b''.join(stream_zip(files())))) as my_zip:
             for my_info in my_zip.infolist():
                 with my_zip.open(my_info.filename) as my_file:
-                    yield my_info.filename, my_file.read()
+                    yield my_info.filename, my_info.file_size, my_file.read()
 
-    assert [('file-1',  b'a' * 10000 + b'b' * 10000), ('file-2', b'cd')] == list(extracted())
+    assert [('file-1', 20000, b'a' * 10000 + b'b' * 10000), ('file-2', 2, b'cd')] == list(extracted())
