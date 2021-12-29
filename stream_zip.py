@@ -13,14 +13,21 @@ def stream_zip(files, chunk_size=65536):
         dir_file_header_struct = Struct('<HH2sHHHIIIHHHHHII')
         directory = []
 
+        offset = 0
+
+        def _(chunk):
+            nonlocal offset
+            offset += len(chunk)
+            yield chunk
+
         for name, modified_at, chunks in files:
             name_encoded = name.encode()
             local_extra = \
                 zip64_size_signature + \
                 Struct('<H').pack(16) + \
                 Struct('<QQ').pack(0, 0)  # Compressed and uncompressed sizes, 0 since data descriptor
-            yield local_header_signature
-            yield local_file_header_struct.pack(
+            yield from _(local_header_signature)
+            yield from _(local_file_header_struct.pack(
                 45,                 # Version
                 b'\x08\x00',        # Flags - data descriptor
                 8,                  # Compression - deflate
@@ -31,9 +38,9 @@ def stream_zip(files, chunk_size=65536):
                 4294967295,         # Uncompressed size - since zip64
                 len(name_encoded),
                 len(local_extra),
-            )
-            yield name_encoded
-            yield local_extra
+            ))
+            yield from _(name_encoded)
+            yield from _(local_extra)
 
             uncompressed_size = 0
             compressed_size = 0
@@ -44,25 +51,25 @@ def stream_zip(files, chunk_size=65536):
                 crc_32 = zlib.crc32(chunk, crc_32)
                 compressed_chunk = compress_obj.compress(chunk)
                 compressed_size += len(compressed_chunk)
-                yield compressed_chunk
+                yield from _(compressed_chunk)
 
             compressed_chunk = compress_obj.flush()
             if compressed_chunk:
                 compressed_size += len(compressed_chunk)
-                yield compressed_chunk
+                yield from _(compressed_chunk)
 
-            yield data_descriptor_signature
-            yield Struct('<IQQ').pack(crc_32, compressed_size, uncompressed_size)
+            yield from _(data_descriptor_signature)
+            yield from _(Struct('<IQQ').pack(crc_32, compressed_size, uncompressed_size))
 
             directory.append((name_encoded, modified_at, compressed_size, uncompressed_size))
 
         for name, modified_at, compressed_size, uncompressed_size in directory:
-            yield directory_header_signature
+            yield from _(directory_header_signature)
             directory_extra = \
                 zip64_size_signature + \
                 Struct('<H').pack(16) + \
                 Struct('<QQ').pack(compressed_size, uncompressed_size)
-            yield dir_file_header_struct.pack(
+            yield from _(dir_file_header_struct.pack(
                 45,                 # Version
                 45,                 # Version
                 b'\x08\x00',        # Flags - data descriptor
@@ -79,9 +86,9 @@ def stream_zip(files, chunk_size=65536):
                 0,                  # Internal file attributes - is binary
                 0,                  # External file attributes
                 0xffffffff,         # Offset of local header - sinze zip64
-            )
-            yield name_encoded
-            yield directory_extra
+            ))
+            yield from _(name_encoded)
+            yield from _(directory_extra)
 
     def get_zipped_chunks_even(zipped_chunks):
         chunk = b''
