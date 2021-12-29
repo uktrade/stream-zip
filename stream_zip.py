@@ -78,7 +78,7 @@ def stream_zip(files, chunk_size=65536):
                 zip64_extra_signature + \
                 zip64_extra_struct.pack(
                     28,
-                    0,  # Uncompressed sizes - 0 since data descriptor
+                    0,  # Uncompressed size - 0 since data descriptor
                     0,  # Compressed size - 0 since data descriptor
                     file_offset,
                     0   # Disk number
