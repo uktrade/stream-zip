@@ -17,7 +17,7 @@ def stream_zip(files, chunk_size=65536):
         local_header_struct = Struct('<H2sHHHIIIHH')
         central_directory_file_header_struct = Struct('<HH2sHHHIIIHHHHHII')
         zip64_end_of_central_directory_struct = Struct('<QHHIIQQQQ')
-        zip64_end_of_central_directory_locator = Struct('<HQH')
+        zip64_end_of_central_directory_locator = Struct('<IQI')
         end_of_central_directory_struct = Struct('<HHHHIIH')
         directory = []
 
