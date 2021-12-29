@@ -167,8 +167,8 @@ def stream_zip(files, chunk_size=65536):
             45,  # Version required
             0,   # Disk number
             0,   # Disk number with central directory
-            len(directory),
-            len(directory),
+            len(directory),  # On this disk
+            len(directory),  # In total
             central_directory_size,
             central_directory_start_offset,
         ))
@@ -182,12 +182,12 @@ def stream_zip(files, chunk_size=65536):
 
         yield from _(end_of_central_directory_signature)
         yield from _(end_of_central_directory_struct.pack(
-            0xffff,      # Since zip64
-            0xffff,      # Since zip64
-            0xffff,      # Since zip64
-            0xffff,      # Since zip64
-            0xffffffff,  # Since zip64
-            0xffffffff,  # Since zip64
+            0xffff,      # Disk number - since zip64
+            0xffff,      # Disk number with central directory - since zip64
+            0xffff,      # Number of central directory entries on this disk - since zip64
+            0xffff,      # Number of central directory entries in total - since zip64
+            0xffffffff,  # Central directory size - since zip64
+            0xffffffff,  # Central directory offset - since zip64
             0,           # ZIP file comment length
         ))
 
