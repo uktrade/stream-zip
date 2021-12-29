@@ -37,6 +37,7 @@ def test_with_zipfile():
                         my_info.filename,
                         my_info.file_size,
                         my_info.date_time,
+                        my_info.external_attr,
                         my_file.read(),
                     )
 
@@ -44,11 +45,13 @@ def test_with_zipfile():
         'file-1',
         20000,
         (2021, 1, 1, 21, 1, 12),
+        0,
         b'a' * 10000 + b'b' * 10000,
     ), (
         'file-2',
         2,
         (2021, 1, 1, 21, 1, 12),
+        0,
         b'cd',
     )] == list(extracted())
 
