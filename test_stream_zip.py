@@ -2,7 +2,9 @@ from datetime import datetime
 from io import BytesIO
 from zipfile import ZipFile
 
+import pytest
 from stream_unzip import stream_unzip
+
 from stream_zip import stream_zip
 
 
@@ -41,3 +43,15 @@ def test_with_zipfile():
         2,
         b'cd',
     )] == list(extracted())
+
+
+def test_exception_propagates():
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+
+    def files():
+        yield 'file-1', now, (b'a' * 10000, b'b' * 10000)
+        raise Exception('From generator')
+
+    with pytest.raises(Exception,  match='From generator'):
+        for chunk in stream_zip(files()):
+            pass
