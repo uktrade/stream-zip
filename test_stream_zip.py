@@ -67,5 +67,6 @@ def test_chunk_sizes():
         for chunk in stream_zip(files()):
             yield len(chunk)
 
-    sizes = set(list(get_sizes())[:-1])
-    assert sizes == {65536}
+    sizes = list(get_sizes())
+    assert set(sizes[:-1]) == {65536}
+    assert sizes[-1] <= 65536
