@@ -6,6 +6,8 @@ Generating ZIPs on-demand in a web server is a typical use case for stream-zip.
 
 Offers similar functionality to [zipfly](https://github.com/BuzonIO/zipfly), but with a different API, and does not use Python's zipfile module under the hood.
 
+To unZIP files on the fly try [stream-unzip](https://github.com/uktrade/stream-unzip).
+
 
 ## Installation
 
