@@ -24,8 +24,8 @@ def stream_zip(files, chunk_size=65536):
                 0,                  # Modification time
                 0,                  # Modification date
                 0,                  # CRC32 - 0 since data descriptor
-                4294967295,         # Compressed size - 0 since zip64
-                4294967295,         # Uncompressed size - 0 since zip64
+                4294967295,         # Compressed size - since zip64
+                4294967295,         # Uncompressed size - since zip64
                 len(name_encoded),
                 len(extra),
             )
