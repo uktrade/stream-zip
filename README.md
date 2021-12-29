@@ -31,6 +31,6 @@ def unzipped_files():
     yield 'my-file-1.txt', modified_at, perms, file_1_data()
     yield 'my-file-2.txt', modified_at, perms, file_2_data()
 
-for zipped_chunk in stream_zip(unzipped_files)
+for zipped_chunk in stream_zip(unzipped_files()):
     print(zipped_chunk)
 ```
