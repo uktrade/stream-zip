@@ -100,7 +100,7 @@ def stream_zip(files, chunk_size=65536):
                 ))
             elif method == ZIP:
                 yield from _(local_header_struct.pack(
-                    45,           # Version
+                    20,           # Version
                     b'\x08\x00',  # Flags - data descriptor
                     8,            # Compression - deflate
                     mod_at_encoded,
@@ -117,7 +117,7 @@ def stream_zip(files, chunk_size=65536):
                 uncompressed_size = sum(len(chunk) for chunk in chunks)
                 compressed_size = uncompressed_size
                 yield from _(local_header_struct.pack(
-                    45,           # Version
+                    20,           # Version
                     b'\x00\x00',  # Flags
                     0,            # Compression - no compression
                     mod_at_encoded,
@@ -203,8 +203,8 @@ def stream_zip(files, chunk_size=65536):
                 ))
             elif method == ZIP:
                 yield from _(central_directory_header_struct.pack(
-                    45,           # Version made by
-                    45,           # Version required
+                    20,           # Version made by
+                    20,           # Version required
                     b'\x08\x00',  # Flags - data descriptor
                     8,            # Compression - deflate
                     mod_at_encoded,
@@ -221,8 +221,8 @@ def stream_zip(files, chunk_size=65536):
                 ))
             else:
                 yield from _(central_directory_header_struct.pack(
-                    45,           # Version made by
-                    45,           # Version required
+                    20,           # Version made by
+                    20,           # Version required
                     b'\x00\x00',  # Flags
                     0,            # Compression - none
                     mod_at_encoded,
