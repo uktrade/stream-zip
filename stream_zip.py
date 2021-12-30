@@ -3,6 +3,7 @@ from struct import Struct
 import zlib
 
 NO_COMPRESSION = object()
+ZIP = object()
 ZIP64 = object()
 
 def stream_zip(files, chunk_size=65536):
@@ -39,7 +40,8 @@ def stream_zip(files, chunk_size=65536):
         local_header_struct = Struct('<H2sH4sIIIHH')
 
         data_descriptor_signature = b'PK\x07\x08'
-        data_descriptor_struct = Struct('<IQQ')
+        data_descriptor_zip64_struct = Struct('<IQQ')
+        data_descriptor_zip_struct = Struct('<III')
 
         central_directory_header_signature = b'PK\x01\x02'
         central_directory_header_struct = Struct('<HH2sH4sIIIHHHHHII')
@@ -96,6 +98,18 @@ def stream_zip(files, chunk_size=65536):
                     len(name_encoded),
                     0,            # Length of local extra
                 ))
+            elif method == ZIP:
+                yield from _(local_header_struct.pack(
+                    45,           # Version
+                    b'\x08\x00',  # Flags - data descriptor
+                    8,            # Compression - deflate
+                    mod_at_encoded,
+                    0,            # CRC32 - 0 since data descriptor
+                    0,            # Compressed size - 0 since data descriptor
+                    0,            # Uncompressed size - 0 since data descriptor
+                    len(name_encoded),
+                    0,            # Length of local extra
+                ))
             else:
                 crc_32 = zlib.crc32(b'')
                 for chunk in chunks:
@@ -115,7 +129,7 @@ def stream_zip(files, chunk_size=65536):
                 ))
             yield from _(name_encoded)
 
-            if method == ZIP64:
+            if method in (ZIP64, ZIP):
                 uncompressed_size = 0
                 compressed_size = 0
                 crc_32 = zlib.crc32(b'')
@@ -133,6 +147,9 @@ def stream_zip(files, chunk_size=65536):
                     yield from _(compressed_chunk)
 
                 yield from _(data_descriptor_signature)
+                data_descriptor_struct = \
+                    data_descriptor_zip64_struct if method is ZIP64 else \
+                    data_descriptor_zip_struct
                 yield from _(data_descriptor_struct.pack(crc_32, compressed_size, uncompressed_size))
             else:
                 for chunk in chunks:
@@ -145,6 +162,8 @@ def stream_zip(files, chunk_size=65536):
         any_zip64 = False
 
         for file_offset, name_encoded, mod_at_encoded, perms, method, compressed_size, uncompressed_size, crc_32 in directory:
+            any_zip64 = any_zip64 or method == ZIP64
+
             yield from _(central_directory_header_signature)
 
             if method == ZIP64:
@@ -182,6 +201,24 @@ def stream_zip(files, chunk_size=65536):
                     external_attr,
                     0xffffffff,   # Offset of local header - since zip64
                 ))
+            elif method == ZIP:
+                yield from _(central_directory_header_struct.pack(
+                    45,           # Version made by
+                    45,           # Version required
+                    b'\x08\x00',  # Flags - data descriptor
+                    8,            # Compression - deflate
+                    mod_at_encoded,
+                    crc_32,
+                    compressed_size,
+                    uncompressed_size,
+                    len(name_encoded),
+                    len(directory_extra),
+                    0,            # File comment length
+                    0,            # Disk number - since zip64
+                    0,            # Internal file attributes - is binary
+                    external_attr,
+                    file_offset,  # Offset of local header - since zip64
+                ))
             else:
                 yield from _(central_directory_header_struct.pack(
                     45,           # Version made by
@@ -208,36 +245,48 @@ def stream_zip(files, chunk_size=65536):
 
         zip64_end_of_central_directory_offset = offset
 
-        yield from _(zip64_end_of_central_directory_signature)
-        yield from _(zip64_end_of_central_directory_struct.pack(
-            44,  # Size of zip64 end of central directory record
-            45,  # Version made by
-            45,  # Version required
-            0,   # Disk number
-            0,   # Disk number with central directory
-            len(directory),  # On this disk
-            len(directory),  # In total
-            central_directory_size,
-            central_directory_start_offset,
-        ))
+        if any_zip64:
+            yield from _(zip64_end_of_central_directory_signature)
+            yield from _(zip64_end_of_central_directory_struct.pack(
+                44,  # Size of zip64 end of central directory record
+                45,  # Version made by
+                45,  # Version required
+                0,   # Disk number
+                0,   # Disk number with central directory
+                len(directory),  # On this disk
+                len(directory),  # In total
+                central_directory_size,
+                central_directory_start_offset,
+            ))
 
-        yield from _(zip64_end_of_central_directory_locator_signature)
-        yield from _(zip64_end_of_central_directory_locator_struct.pack(
-            0,  # Disk number with zip64 end of central directory record
-            zip64_end_of_central_directory_offset,
-            1   # Total number of disks
-        ))
+            yield from _(zip64_end_of_central_directory_locator_signature)
+            yield from _(zip64_end_of_central_directory_locator_struct.pack(
+                0,  # Disk number with zip64 end of central directory record
+                zip64_end_of_central_directory_offset,
+                1   # Total number of disks
+            ))
 
         yield from _(end_of_central_directory_signature)
-        yield from _(end_of_central_directory_struct.pack(
-            0xffff,      # Disk number - since zip64
-            0xffff,      # Disk number with central directory - since zip64
-            0xffff,      # Number of central directory entries on this disk - since zip64
-            0xffff,      # Number of central directory entries in total - since zip64
-            0xffffffff,  # Central directory size - since zip64
-            0xffffffff,  # Central directory offset - since zip64
-            0,           # ZIP file comment length
-        ))
+        if any_zip64:
+            yield from _(end_of_central_directory_struct.pack(
+                0xffff,      # Disk number - since zip64
+                0xffff,      # Disk number with central directory - since zip64
+                0xffff,      # Number of central directory entries on this disk - since zip64
+                0xffff,      # Number of central directory entries in total - since zip64
+                0xffffffff,  # Central directory size - since zip64
+                0xffffffff,  # Central directory offset - since zip64
+                0,           # ZIP file comment length
+            ))
+        else:
+            yield from _(end_of_central_directory_struct.pack(
+                0,  # Disk number
+                0,  # Disk number with central directory
+                len(directory),  # On this disk
+                len(directory),  # In total
+                central_directory_size,
+                central_directory_start_offset,
+                0, # ZIP file comment length
+            ))
 
     zipped_chunks = get_zipped_chunks_uneven()
     yield from evenly_sized(zipped_chunks)
