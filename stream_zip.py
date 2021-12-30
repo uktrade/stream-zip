@@ -1,3 +1,4 @@
+from collections import deque
 from struct import Struct
 import zlib
 
@@ -55,7 +56,7 @@ def stream_zip(files, chunk_size=65536):
 
         modified_at_struct = Struct('<HH')
 
-        directory = []
+        directory = deque()
         offset = 0
 
         def _(chunk):
