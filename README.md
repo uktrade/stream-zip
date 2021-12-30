@@ -18,7 +18,7 @@ pip install stream-zip
 
 ```python
 from datetime import datetime
-from stream_zip import stream_zip
+from stream_zip import ZIP64, NO_COMPRESSION, stream_zip
 
 def unzipped_files():
     modified_at = datetime.now()
@@ -30,8 +30,11 @@ def unzipped_files():
     def file_2_data():
         yield b'Some bytes'
 
-    yield 'my-file-1.txt', modified_at, perms, file_1_data()
-    yield 'my-file-2.txt', modified_at, perms, file_2_data()
+    # ZIP64 mode
+    yield 'my-file-1.txt', modified_at, perms, ZIP64, file_1_data()
+
+    # No compression
+    yield 'my-file-2.txt', modified_at, perms, NO_COMPRESSION, file_2_data()
 
 for zipped_chunk in stream_zip(unzipped_files()):
     print(zipped_chunk)
@@ -42,4 +45,6 @@ for zipped_chunk in stream_zip(unzipped_files()):
 
 It's not possible to _completely_ stream-write ZIP files. Small bits of metadata for each member file, such as its name, must be placed at the _end_ of the ZIP. In order to do this, stream-unzip buffers this metadata in memory until it can be output.
 
-stream-unzip unconditionally creates ZIP64 files to support sizes bigger than 4GB. Older software may not be able to open these. This may change in later versions.
+stream-unzip creates ZIP64 files to support sizes bigger than 4GB. Older software may not be able to open these.
+
+No compression is supported via the `NO_COMPRESSION` constant as in the above examples. However in this case the entire contents of these are buffered in memory, and so this should not be used for large files.
