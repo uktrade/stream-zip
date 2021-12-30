@@ -41,3 +41,5 @@ for zipped_chunk in stream_zip(unzipped_files()):
 ## Limitations
 
 It's not possible to _completely_ stream-write ZIP files. Small bits of metadata for each member file, such as its name, must be placed at the _end_ of the ZIP. In order to do this, stream-unzip buffers this metadata in memory until it can be output.
+
+stream-unzip unconditionally creates ZIP64 files to support sizes bigger than 4GB. Older software may not be able to open these. This may change in later versions.
