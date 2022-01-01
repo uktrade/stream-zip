@@ -247,6 +247,23 @@ def test_with_zipfile_without_compression():
     )] == list(extracted())
 
 
+def test_with_zipfile_many_files():
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    perms = 0o600
+
+    def files():
+        for i in range(0, 100000):
+            yield f'file-{i}', now, perms, ZIP, (b'ab',)
+
+    def extracted():
+        with ZipFile(BytesIO(b''.join(stream_zip(files())))) as my_zip:
+            for my_info in my_zip.infolist():
+                with my_zip.open(my_info.filename) as my_file:
+                    yield None
+
+    assert len(list(extracted())) == 100000
+
+
 def test_directory_zipfile():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
