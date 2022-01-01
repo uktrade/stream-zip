@@ -268,8 +268,7 @@ def stream_zip(files, chunk_size=65536):
                 1   # Total number of disks
             ))
 
-        yield from _(end_of_central_directory_signature)
-        if needs_zip64_end_of_central_directory:
+            yield from _(end_of_central_directory_signature)
             yield from _(end_of_central_directory_struct.pack(
                 0xffff,      # Disk number - since zip64
                 0xffff,      # Disk number with central directory - since zip64
@@ -280,6 +279,7 @@ def stream_zip(files, chunk_size=65536):
                 0,           # ZIP file comment length
             ))
         else:
+            yield from _(end_of_central_directory_signature)
             yield from _(end_of_central_directory_struct.pack(
                 0,  # Disk number
                 0,  # Disk number with central directory
