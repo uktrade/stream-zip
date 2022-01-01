@@ -234,7 +234,7 @@ def stream_zip(files, chunk_size=65536):
                len(name_encoded),
                len(extra),
                0,            # File comment length
-               0,            # Disk number - since zip64
+               0xffff,       # Disk number - since zip64
                0,            # Internal file attributes - is binary
                external_attr,
                0xffffffff if needs_zip64 else file_offset,
