@@ -69,10 +69,6 @@ def stream_zip(files, chunk_size=65536):
             yield chunk
 
         for name, modified_at, perms, method, chunks in files:
-            if method == NO_COMPRESSION:
-                # We cannot have a data descriptor, and so have to be able to determine the total
-                # length and CRC32 before output ofchunks to client code
-                chunks = tuple(chunks)
 
             file_offset = offset
             name_encoded = name.encode()
@@ -114,6 +110,9 @@ def stream_zip(files, chunk_size=65536):
                 ))
                 yield from _(name_encoded)
             else:
+                # We cannot have a data descriptor, and so have to be able to determine the total
+                # length and CRC32 before output ofchunks to client code
+                chunks = tuple(chunks)
                 crc_32 = zlib.crc32(b'')
                 for chunk in chunks:
                     crc_32 = zlib.crc32(chunk, crc_32)
