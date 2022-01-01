@@ -98,13 +98,14 @@ def test_with_stream_unzip_large_not_easily_compressible():
                 yield batch
 
         yield 'file-1', now, perms, ZIP64, data()
+        yield 'file-2', now, perms, NO_COMPRESSION, (b'-',)  # Must be ZIP64 due to its offset
 
     num_received = 0
     for name, size, chunks in stream_unzip(stream_zip(files())):
         for chunk in chunks:
             num_received += len(chunk)
 
-    assert num_received == 10000000000
+    assert num_received == 10000000001
 
 
 def test_with_zipfile_zip64():
