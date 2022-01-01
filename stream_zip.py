@@ -240,8 +240,6 @@ def stream_zip(files, chunk_size=65536):
         central_directory_end_offset = offset
         central_directory_size = central_directory_end_offset - central_directory_start_offset
 
-        zip64_end_of_central_directory_offset = offset
-
         needs_zip64_end_of_central_directory = \
             len(directory) >= 0xffff or \
             central_directory_size >= 0xffffffff or \
@@ -264,7 +262,7 @@ def stream_zip(files, chunk_size=65536):
             yield from _(zip64_end_of_central_directory_locator_signature)
             yield from _(zip64_end_of_central_directory_locator_struct.pack(
                 0,  # Disk number with zip64 end of central directory record
-                zip64_end_of_central_directory_offset,
+                central_directory_end_offset,
                 1   # Total number of disks
             ))
 
