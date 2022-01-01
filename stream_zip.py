@@ -198,6 +198,8 @@ def stream_zip(files, chunk_size=65536):
                     external_attr,
                     0xffffffff,   # Offset of local header - since zip64
                 ))
+                yield from _(name_encoded)
+                yield from _(extra)
             elif method == ZIP:
                 extra = b''
                 yield from _(central_directory_header_signature)
@@ -218,6 +220,8 @@ def stream_zip(files, chunk_size=65536):
                     external_attr,
                     file_offset,  # Offset of local header - since zip64
                 ))
+                yield from _(name_encoded)
+                yield from _(extra)
             else:
                 extra = b''
                 yield from _(central_directory_header_signature)
@@ -238,8 +242,8 @@ def stream_zip(files, chunk_size=65536):
                     external_attr,
                     file_offset,
                 ))
-            yield from _(name_encoded)
-            yield from _(extra)
+                yield from _(name_encoded)
+                yield from _(extra)
 
         central_directory_end_offset = offset
         central_directory_size = central_directory_end_offset - central_directory_start_offset
