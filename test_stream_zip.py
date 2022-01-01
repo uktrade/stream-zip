@@ -1,6 +1,8 @@
 from datetime import datetime
 from io import BytesIO
 import os
+import subprocess
+from tempfile import TemporaryDirectory
 from zipfile import ZipFile
 
 import pytest
@@ -257,6 +259,93 @@ def test_directory_zipfile():
         (2021, 1, 1, 21, 1, 12),
         perms << 16 | 0x10,
         b'',
+    )] == list(extracted())
+
+
+def test_with_unzip_zip64():
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    perms = 0o600
+
+    def files():
+        yield 'file-1', now, perms, ZIP64, (b'a' * 10000, b'b' * 10000)
+        yield 'file-2', now, perms, ZIP64, (b'c', b'd')
+
+    def extracted():
+        with TemporaryDirectory() as d:
+            with open(f'{d}/my.zip', 'wb') as f:
+                f.write(b''.join(stream_zip(files())))
+            subprocess.run(['unzip', f'{d}/my.zip', '-d', d])
+
+            with open(f'{d}/file-1', 'rb') as f:
+                yield 'file-1', f.read()
+
+            with open(f'{d}/file-2', 'rb') as f:
+                yield 'file-2', f.read()
+
+    assert [(
+        'file-1',
+        b'a' * 10000 + b'b' * 10000,
+    ), (
+        'file-2',
+        b'cd',
+    )] == list(extracted())
+
+
+def test_with_unzip_zip_and_64():
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    perms = 0o600
+
+    def files():
+        yield 'file-1', now, perms, ZIP64, (b'a' * 10000, b'b' * 10000)
+        yield 'file-2', now, perms, ZIP, (b'c', b'd')
+
+    def extracted():
+        with TemporaryDirectory() as d:
+            with open(f'{d}/my.zip', 'wb') as f:
+                f.write(b''.join(stream_zip(files())))
+            subprocess.run(['unzip', f'{d}/my.zip', '-d', d])
+
+            with open(f'{d}/file-1', 'rb') as f:
+                yield 'file-1', f.read()
+
+            with open(f'{d}/file-2', 'rb') as f:
+                yield 'file-2', f.read()
+
+    assert [(
+        'file-1',
+        b'a' * 10000 + b'b' * 10000,
+    ), (
+        'file-2',
+        b'cd',
+    )] == list(extracted())
+
+
+def test_with_unzip_without_compression():
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    perms = 0o600
+
+    def files():
+        yield 'file-1', now, perms, NO_COMPRESSION, (b'a' * 10000, b'b' * 10000)
+        yield 'file-2', now, perms, NO_COMPRESSION, (b'c', b'd')
+
+    def extracted():
+        with TemporaryDirectory() as d:
+            with open(f'{d}/my.zip', 'wb') as f:
+                f.write(b''.join(stream_zip(files())))
+            subprocess.run(['unzip', f'{d}/my.zip', '-d', d])
+
+            with open(f'{d}/file-1', 'rb') as f:
+                yield 'file-1', f.read()
+
+            with open(f'{d}/file-2', 'rb') as f:
+                yield 'file-2', f.read()
+
+    assert [(
+        'file-1',
+        b'a' * 10000 + b'b' * 10000,
+    ), (
+        'file-2',
+        b'cd',
     )] == list(extracted())
 
 
