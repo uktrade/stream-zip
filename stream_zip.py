@@ -236,7 +236,7 @@ def stream_zip(files, chunk_size=65536):
                     0,            # Internal file attributes - is binary
                     external_attr,
                     file_offset,
-                ))      
+                ))
             yield from _(name_encoded)
             yield from _(directory_extra)
 
