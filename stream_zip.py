@@ -85,8 +85,8 @@ def stream_zip(files, chunk_size=65536):
                 (modified_at.year - 1980) << 9,
             )
 
-            yield from _(local_header_signature)
             if method == ZIP64:
+                yield from _(local_header_signature)
                 yield from _(local_header_struct.pack(
                     45,           # Version
                     b'\x08\x00',  # Flags - data descriptor
@@ -99,6 +99,7 @@ def stream_zip(files, chunk_size=65536):
                     0,            # Length of local extra
                 ))
             elif method == ZIP:
+                yield from _(local_header_signature)
                 yield from _(local_header_struct.pack(
                     20,           # Version
                     b'\x08\x00',  # Flags - data descriptor
@@ -116,6 +117,7 @@ def stream_zip(files, chunk_size=65536):
                     crc_32 = zlib.crc32(chunk, crc_32)
                 uncompressed_size = sum(len(chunk) for chunk in chunks)
                 compressed_size = uncompressed_size
+                yield from _(local_header_signature)
                 yield from _(local_header_struct.pack(
                     20,           # Version
                     b'\x00\x00',  # Flags
