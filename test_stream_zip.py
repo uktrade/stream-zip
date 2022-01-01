@@ -67,10 +67,30 @@ def test_with_stream_unzip_without_compresion():
     ]
 
 
-def test_with_stream_unzip_large():
+def test_with_stream_unzip_large_easily_compressible():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
     batch = b'-' * 1000000
+
+    def files():
+        def data():
+            for i in range(0, 10000):
+                yield batch
+
+        yield 'file-1', now, perms, ZIP64, data()
+
+    num_received = 0
+    for name, size, chunks in stream_unzip(stream_zip(files())):
+        for chunk in chunks:
+            num_received += len(chunk)
+
+    assert num_received == 10000000000
+
+
+def test_with_stream_unzip_large_not_easily_compressible():
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    perms = 0o600
+    batch = os.urandom(1000000)
 
     def files():
         def data():
