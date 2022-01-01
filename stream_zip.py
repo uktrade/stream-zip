@@ -190,18 +190,18 @@ def stream_zip(files, chunk_size=65536):
                 crc_32 = zlib.crc32(chunk, crc_32)
                 uncompressed_size += len(chunk)
             compressed_size = uncompressed_size
+            disk_number = 0
             needs_zip64 = uncompressed_size >= 0xffffffff or file_offset >= 0xffffffff
-            version = 45 if needs_zip64 else 20
-            extra = \
-                zip64_extra_struct.pack(
+            version, compressed_size_32, uncompressed_size_32, disk_number_32, file_offset_32, extra  = \
+                (45, 0xffffffff, 0xffffffff, 0xffff, 0xffffffff, zip64_extra_struct.pack(
                     zip64_extra_signature,
                     28,  # Size of extra
                     uncompressed_size,
                     compressed_size,
                     file_offset,
-                    0,   # Disk number
-                ) if needs_zip64 else \
-                b''
+                    disk_number,
+                )) if needs_zip64 else \
+                (20, compressed_size, uncompressed_size, disk_number, file_offset, b'')
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 version,
@@ -209,8 +209,8 @@ def stream_zip(files, chunk_size=65536):
                 0,            # Compression - no compression
                 mod_at_encoded,
                 crc_32,
-                0xffffffff if needs_zip64 else compressed_size,
-                0xffffffff if needs_zip64 else uncompressed_size,
+                compressed_size_32,
+                uncompressed_size_32,
                 len(name_encoded),
                 len(extra),
             ))
@@ -227,15 +227,15 @@ def stream_zip(files, chunk_size=65536):
                0,            # Compression - none
                mod_at_encoded,
                crc_32,
-               0xffffffff if needs_zip64 else compressed_size,
-               0xffffffff if needs_zip64 else uncompressed_size,
+               compressed_size_32,
+               uncompressed_size_32,
                len(name_encoded),
                len(extra),
                0,            # File comment length
-               0xffff,       # Disk number - since zip64
+               disk_number_32,
                0,            # Internal file attributes - is binary
                external_attr,
-               0xffffffff if needs_zip64 else file_offset,
+               file_offset_32,
             ), name_encoded, extra
 
         for name, modified_at, perms, method, chunks in files:
