@@ -113,10 +113,12 @@ def stream_zip(files, chunk_size=65536):
                 # We cannot have a data descriptor, and so have to be able to determine the total
                 # length and CRC32 before output ofchunks to client code
                 chunks = tuple(chunks)
+                uncompressed_size = 0
+                compressed_size = 0
                 crc_32 = zlib.crc32(b'')
                 for chunk in chunks:
                     crc_32 = zlib.crc32(chunk, crc_32)
-                uncompressed_size = sum(len(chunk) for chunk in chunks)
+                    uncompressed_size += len(chunk)
                 compressed_size = uncompressed_size
                 yield from _(local_header_signature)
                 yield from _(local_header_struct.pack(
