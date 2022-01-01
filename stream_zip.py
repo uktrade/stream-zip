@@ -166,7 +166,7 @@ def stream_zip(files, chunk_size=65536):
                 (0x10 if name_encoded[-1:] == b'/' else 0x0)  # MS-DOS directory
 
             if method == ZIP64:
-                directory_extra = \
+                extra = \
                     zip64_extra_signature + \
                     zip64_extra_struct.pack(
                         28,  # Size of extra
@@ -186,7 +186,7 @@ def stream_zip(files, chunk_size=65536):
                     0xffffffff,   # Compressed size - since zip64
                     0xffffffff,   # Uncompressed size - since zip64
                     len(name_encoded),
-                    len(directory_extra),
+                    len(extra),
                     0,            # File comment length
                     0xffff,       # Disk number - since zip64
                     0,            # Internal file attributes - is binary
@@ -194,7 +194,7 @@ def stream_zip(files, chunk_size=65536):
                     0xffffffff,   # Offset of local header - since zip64
                 ))
             elif method == ZIP:
-                directory_extra = b''
+                extra = b''
                 yield from _(central_directory_header_signature)
                 yield from _(central_directory_header_struct.pack(
                     20,           # Version made by
@@ -206,7 +206,7 @@ def stream_zip(files, chunk_size=65536):
                     compressed_size,
                     uncompressed_size,
                     len(name_encoded),
-                    len(directory_extra),
+                    len(extra),
                     0,            # File comment length
                     0,            # Disk number - since zip64
                     0,            # Internal file attributes - is binary
@@ -214,7 +214,7 @@ def stream_zip(files, chunk_size=65536):
                     file_offset,  # Offset of local header - since zip64
                 ))
             else:
-                directory_extra = b''
+                extra = b''
                 yield from _(central_directory_header_signature)
                 yield from _(central_directory_header_struct.pack(
                     20,           # Version made by
@@ -226,7 +226,7 @@ def stream_zip(files, chunk_size=65536):
                     compressed_size,
                     uncompressed_size,
                     len(name_encoded),
-                    len(directory_extra),
+                    len(extra),
                     0,            # File comment length
                     0,            # Disk number - since zip64
                     0,            # Internal file attributes - is binary
@@ -234,7 +234,7 @@ def stream_zip(files, chunk_size=65536):
                     file_offset,
                 ))
             yield from _(name_encoded)
-            yield from _(directory_extra)
+            yield from _(extra)
 
         central_directory_end_offset = offset
         central_directory_size = central_directory_end_offset - central_directory_start_offset
