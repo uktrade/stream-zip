@@ -272,6 +272,7 @@ def test_exception_propagates():
         for chunk in stream_zip(files()):
             pass
 
+
 def test_chunk_sizes():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
