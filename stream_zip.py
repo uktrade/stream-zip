@@ -120,6 +120,19 @@ def stream_zip(files, chunk_size=65536):
                     crc_32 = zlib.crc32(chunk, crc_32)
                     uncompressed_size += len(chunk)
                 compressed_size = uncompressed_size
+                needs_zip64 = uncompressed_size >= 0xffffffff or file_offset >= 0xffffffff
+                extra = \
+                    (
+                        zip64_extra_signature + \
+                        zip64_extra_struct.pack(
+                            28,  # Size of extra
+                            uncompressed_size,
+                            compressed_size,
+                            file_offset,
+                            0,   # Disk number
+                        )
+                    ) if needs_zip64 else \
+                    b''
                 yield from _(local_header_signature)
                 yield from _(local_header_struct.pack(
                     20,           # Version
@@ -127,12 +140,13 @@ def stream_zip(files, chunk_size=65536):
                     0,            # Compression - no compression
                     mod_at_encoded,
                     crc_32,
-                    compressed_size,
-                    uncompressed_size,
+                    0xffffffff if needs_zip64 else compressed_size,
+                    0xffffffff if needs_zip64 else uncompressed_size,
                     len(name_encoded),
-                    0,            # Length of local extra
+                    len(extra),
                 ))
                 yield from _(name_encoded)
+                yield from _(extra)
 
             if method in (ZIP64, ZIP):
                 uncompressed_size = 0
@@ -223,7 +237,19 @@ def stream_zip(files, chunk_size=65536):
                 yield from _(name_encoded)
                 yield from _(extra)
             else:
-                extra = b''
+                needs_zip64 = uncompressed_size >= 0xffffffff or file_offset >= 0xffffffff
+                extra = \
+                    (
+                        zip64_extra_signature + \
+                        zip64_extra_struct.pack(
+                            28,  # Size of extra
+                            uncompressed_size,
+                            compressed_size,
+                            file_offset,
+                            0,   # Disk number
+                        )
+                    ) if needs_zip64 else \
+                    b''
                 yield from _(central_directory_header_signature)
                 yield from _(central_directory_header_struct.pack(
                     20,           # Version made by
@@ -232,15 +258,15 @@ def stream_zip(files, chunk_size=65536):
                     0,            # Compression - none
                     mod_at_encoded,
                     crc_32,
-                    compressed_size,
-                    uncompressed_size,
+                    0xffffffff if needs_zip64 else compressed_size,
+                    0xffffffff if needs_zip64 else uncompressed_size,
                     len(name_encoded),
                     len(extra),
                     0,            # File comment length
                     0,            # Disk number - since zip64
                     0,            # Internal file attributes - is binary
                     external_attr,
-                    file_offset,
+                    0xffffffff if needs_zip64 else file_offset,
                 ))
                 yield from _(name_encoded)
                 yield from _(extra)
