@@ -150,10 +150,11 @@ def stream_zip(files, chunk_size=65536):
                     compressed_size += len(compressed_chunk)
                     yield from _(compressed_chunk)
 
-                yield from _(data_descriptor_signature)
                 data_descriptor_struct = \
                     data_descriptor_zip64_struct if method is ZIP64 else \
                     data_descriptor_zip_struct
+
+                yield from _(data_descriptor_signature)
                 yield from _(data_descriptor_struct.pack(crc_32, compressed_size, uncompressed_size))
             else:
                 for chunk in chunks:
