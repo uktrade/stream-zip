@@ -60,7 +60,7 @@ def stream_zip(files, chunk_size=65536):
 
         modified_at_struct = Struct('<HH')
 
-        directory = deque()
+        central_directory = deque()
         offset = 0
 
         def _(chunk):
@@ -68,9 +68,179 @@ def stream_zip(files, chunk_size=65536):
             offset += len(chunk)
             yield chunk
 
-        for name, modified_at, perms, method, chunks in files:
-
+        def _zip64_local_header_and_data(name_encoded, mod_at_encoded, external_attr, chunks):
             file_offset = offset
+
+            yield from _(local_header_signature)
+            yield from _(local_header_struct.pack(
+                45,           # Version
+                b'\x08\x00',  # Flags - data descriptor
+                8,            # Compression - deflate
+                mod_at_encoded,
+                0,            # CRC32 - 0 since data descriptor
+                0xffffffff,   # Compressed size - since zip64
+                0xffffffff,   # Uncompressed size - since zip64
+                len(name_encoded),
+                0,            # Length of local extra
+            ))
+            yield from _(name_encoded)
+
+            uncompressed_size, compressed_size, crc_32 = yield from _zip_or_zip64_data(chunks)
+
+            yield from _(data_descriptor_signature)
+            yield from _(data_descriptor_zip64_struct.pack(crc_32, compressed_size, uncompressed_size))
+
+            extra = \
+                zip64_extra_signature + \
+                zip64_extra_struct.pack(
+                    28,  # Size of extra
+                    uncompressed_size,
+                    compressed_size,
+                    file_offset,
+                    0,   # Disk number
+                )
+            return central_directory_header_struct.pack(
+                45,           # Version made by
+                45,           # Version required
+                b'\x08\x00',  # Flags - data descriptor
+                8,            # Compression - deflate
+                mod_at_encoded,
+                crc_32,
+                0xffffffff,   # Compressed size - since zip64
+                0xffffffff,   # Uncompressed size - since zip64
+                len(name_encoded),
+                len(extra),
+                0,            # File comment length
+                0xffff,       # Disk number - since zip64
+                0,            # Internal file attributes - is binary
+                external_attr,
+                0xffffffff,   # Offset of local header - since zip64
+            ), name_encoded, extra
+
+        def _zip_local_header_and_data(name_encoded, mod_at_encoded, external_attr, chunks):
+            file_offset = offset
+
+            yield from _(local_header_signature)
+            yield from _(local_header_struct.pack(
+                20,           # Version
+                b'\x08\x00',  # Flags - data descriptor
+                8,            # Compression - deflate
+                mod_at_encoded,
+                0,            # CRC32 - 0 since data descriptor
+                0,            # Compressed size - 0 since data descriptor
+                0,            # Uncompressed size - 0 since data descriptor
+                len(name_encoded),
+                0,            # Length of local extra
+            ))
+            yield from _(name_encoded)
+
+            uncompressed_size, compressed_size, crc_32 = yield from _zip_or_zip64_data(chunks)
+
+            yield from _(data_descriptor_signature)
+            yield from _(data_descriptor_zip_struct.pack(crc_32, compressed_size, uncompressed_size))
+
+            extra = b''
+            return central_directory_header_struct.pack(
+                20,           # Version made by
+                20,           # Version required
+                b'\x08\x00',  # Flags - data descriptor
+                8,            # Compression - deflate
+                mod_at_encoded,
+                crc_32,
+                compressed_size,
+                uncompressed_size,
+                len(name_encoded),
+                len(extra),
+                0,            # File comment length
+                0,            # Disk number - since zip64
+                0,            # Internal file attributes - is binary
+                external_attr,
+                file_offset,
+            ), name_encoded, extra
+
+        def _zip_or_zip64_data(chunks):
+            # The data is identical for ZIP and ZIP64
+
+            uncompressed_size = 0
+            compressed_size = 0
+            crc_32 = zlib.crc32(b'')
+            compress_obj = zlib.compressobj(wbits=-zlib.MAX_WBITS, level=9)
+            for chunk in evenly_sized(chunks):
+                uncompressed_size += len(chunk)
+                crc_32 = zlib.crc32(chunk, crc_32)
+                compressed_chunk = compress_obj.compress(chunk)
+                compressed_size += len(compressed_chunk)
+                yield from _(compressed_chunk)
+
+            compressed_chunk = compress_obj.flush()
+            compressed_size += len(compressed_chunk)
+            yield from _(compressed_chunk)
+
+            return uncompressed_size, compressed_size, crc_32
+
+        def _uncompressed_local_header_and_data(name_encoded, mod_at_encoded, external_attr, chunks):
+            file_offset = offset
+
+            # We cannot have a data descriptor, and so have to be able to determine the total
+            # length and CRC32 before output ofchunks to client code
+            chunks = tuple(chunks)
+            uncompressed_size = 0
+            compressed_size = 0
+            crc_32 = zlib.crc32(b'')
+            for chunk in chunks:
+                crc_32 = zlib.crc32(chunk, crc_32)
+                uncompressed_size += len(chunk)
+            compressed_size = uncompressed_size
+            needs_zip64 = uncompressed_size >= 0xffffffff or file_offset >= 0xffffffff
+            extra = \
+                (
+                    zip64_extra_signature + \
+                    zip64_extra_struct.pack(
+                        28,  # Size of extra
+                        uncompressed_size,
+                        compressed_size,
+                        file_offset,
+                        0,   # Disk number
+                    )
+                ) if needs_zip64 else \
+                b''
+            yield from _(local_header_signature)
+            yield from _(local_header_struct.pack(
+                20,           # Version
+                b'\x00\x00',  # Flags
+                0,            # Compression - no compression
+                mod_at_encoded,
+                crc_32,
+                0xffffffff if needs_zip64 else compressed_size,
+                0xffffffff if needs_zip64 else uncompressed_size,
+                len(name_encoded),
+                len(extra),
+            ))
+            yield from _(name_encoded)
+            yield from _(extra)
+
+            for chunk in chunks:
+                yield from _(chunk)
+
+            return central_directory_header_struct.pack(
+               20,           # Version made by
+               20,           # Version required
+               b'\x00\x00',  # Flags
+               0,            # Compression - none
+               mod_at_encoded,
+               crc_32,
+               0xffffffff if needs_zip64 else compressed_size,
+               0xffffffff if needs_zip64 else uncompressed_size,
+               len(name_encoded),
+               len(extra),
+               0,            # File comment length
+               0,            # Disk number - since zip64
+               0,            # Internal file attributes - is binary
+               external_attr,
+               0xffffffff if needs_zip64 else file_offset,
+            ), name_encoded, extra
+
+        for name, modified_at, perms, method, chunks in files:
             name_encoded = name.encode()
             mod_at_encoded = modified_at_struct.pack(
                 int(modified_at.second / 2) | \
@@ -80,202 +250,29 @@ def stream_zip(files, chunk_size=65536):
                 (modified_at.month << 5) | \
                 (modified_at.year - 1980) << 9,
             )
-
-            if method == ZIP64:
-                yield from _(local_header_signature)
-                yield from _(local_header_struct.pack(
-                    45,           # Version
-                    b'\x08\x00',  # Flags - data descriptor
-                    8,            # Compression - deflate
-                    mod_at_encoded,
-                    0,            # CRC32 - 0 since data descriptor
-                    0xffffffff,   # Compressed size - since zip64
-                    0xffffffff,   # Uncompressed size - since zip64
-                    len(name_encoded),
-                    0,            # Length of local extra
-                ))
-                yield from _(name_encoded)
-            elif method == ZIP:
-                yield from _(local_header_signature)
-                yield from _(local_header_struct.pack(
-                    20,           # Version
-                    b'\x08\x00',  # Flags - data descriptor
-                    8,            # Compression - deflate
-                    mod_at_encoded,
-                    0,            # CRC32 - 0 since data descriptor
-                    0,            # Compressed size - 0 since data descriptor
-                    0,            # Uncompressed size - 0 since data descriptor
-                    len(name_encoded),
-                    0,            # Length of local extra
-                ))
-                yield from _(name_encoded)
-            else:
-                # We cannot have a data descriptor, and so have to be able to determine the total
-                # length and CRC32 before output ofchunks to client code
-                chunks = tuple(chunks)
-                uncompressed_size = 0
-                compressed_size = 0
-                crc_32 = zlib.crc32(b'')
-                for chunk in chunks:
-                    crc_32 = zlib.crc32(chunk, crc_32)
-                    uncompressed_size += len(chunk)
-                compressed_size = uncompressed_size
-                needs_zip64 = uncompressed_size >= 0xffffffff or file_offset >= 0xffffffff
-                extra = \
-                    (
-                        zip64_extra_signature + \
-                        zip64_extra_struct.pack(
-                            28,  # Size of extra
-                            uncompressed_size,
-                            compressed_size,
-                            file_offset,
-                            0,   # Disk number
-                        )
-                    ) if needs_zip64 else \
-                    b''
-                yield from _(local_header_signature)
-                yield from _(local_header_struct.pack(
-                    20,           # Version
-                    b'\x00\x00',  # Flags
-                    0,            # Compression - no compression
-                    mod_at_encoded,
-                    crc_32,
-                    0xffffffff if needs_zip64 else compressed_size,
-                    0xffffffff if needs_zip64 else uncompressed_size,
-                    len(name_encoded),
-                    len(extra),
-                ))
-                yield from _(name_encoded)
-                yield from _(extra)
-
-            if method in (ZIP64, ZIP):
-                uncompressed_size = 0
-                compressed_size = 0
-                crc_32 = zlib.crc32(b'')
-                compress_obj = zlib.compressobj(wbits=-zlib.MAX_WBITS, level=9)
-                for chunk in evenly_sized(chunks):
-                    uncompressed_size += len(chunk)
-                    crc_32 = zlib.crc32(chunk, crc_32)
-                    compressed_chunk = compress_obj.compress(chunk)
-                    compressed_size += len(compressed_chunk)
-                    yield from _(compressed_chunk)
-
-                compressed_chunk = compress_obj.flush()
-                compressed_size += len(compressed_chunk)
-                yield from _(compressed_chunk)
-
-                data_descriptor_struct = \
-                    data_descriptor_zip64_struct if method is ZIP64 else \
-                    data_descriptor_zip_struct
-
-                yield from _(data_descriptor_signature)
-                yield from _(data_descriptor_struct.pack(crc_32, compressed_size, uncompressed_size))
-            else:
-                for chunk in chunks:
-                    yield from _(chunk)
-
-            directory.append((file_offset, name_encoded, mod_at_encoded, perms, method, compressed_size, uncompressed_size, crc_32))
-
-        central_directory_start_offset = offset
-
-        for file_offset, name_encoded, mod_at_encoded, perms, method, compressed_size, uncompressed_size, crc_32 in directory:
-
             external_attr = \
                 (perms << 16) | \
                 (0x10 if name_encoded[-1:] == b'/' else 0x0)  # MS-DOS directory
 
-            if method == ZIP64:
-                extra = \
-                    zip64_extra_signature + \
-                    zip64_extra_struct.pack(
-                        28,  # Size of extra
-                        uncompressed_size,
-                        compressed_size,
-                        file_offset,
-                        0,   # Disk number
-                    )
-                yield from _(central_directory_header_signature)
-                yield from _(central_directory_header_struct.pack(
-                    45,           # Version made by
-                    45,           # Version required
-                    b'\x08\x00',  # Flags - data descriptor
-                    8,            # Compression - deflate
-                    mod_at_encoded,
-                    crc_32,
-                    0xffffffff,   # Compressed size - since zip64
-                    0xffffffff,   # Uncompressed size - since zip64
-                    len(name_encoded),
-                    len(extra),
-                    0,            # File comment length
-                    0xffff,       # Disk number - since zip64
-                    0,            # Internal file attributes - is binary
-                    external_attr,
-                    0xffffffff,   # Offset of local header - since zip64
-                ))
-                yield from _(name_encoded)
-                yield from _(extra)
-            elif method == ZIP:
-                extra = b''
-                yield from _(central_directory_header_signature)
-                yield from _(central_directory_header_struct.pack(
-                    20,           # Version made by
-                    20,           # Version required
-                    b'\x08\x00',  # Flags - data descriptor
-                    8,            # Compression - deflate
-                    mod_at_encoded,
-                    crc_32,
-                    compressed_size,
-                    uncompressed_size,
-                    len(name_encoded),
-                    len(extra),
-                    0,            # File comment length
-                    0,            # Disk number - since zip64
-                    0,            # Internal file attributes - is binary
-                    external_attr,
-                    file_offset,  # Offset of local header - since zip64
-                ))
-                yield from _(name_encoded)
-                yield from _(extra)
-            else:
-                needs_zip64 = uncompressed_size >= 0xffffffff or file_offset >= 0xffffffff
-                extra = \
-                    (
-                        zip64_extra_signature + \
-                        zip64_extra_struct.pack(
-                            28,  # Size of extra
-                            uncompressed_size,
-                            compressed_size,
-                            file_offset,
-                            0,   # Disk number
-                        )
-                    ) if needs_zip64 else \
-                    b''
-                yield from _(central_directory_header_signature)
-                yield from _(central_directory_header_struct.pack(
-                    20,           # Version made by
-                    20,           # Version required
-                    b'\x00\x00',  # Flags
-                    0,            # Compression - none
-                    mod_at_encoded,
-                    crc_32,
-                    0xffffffff if needs_zip64 else compressed_size,
-                    0xffffffff if needs_zip64 else uncompressed_size,
-                    len(name_encoded),
-                    len(extra),
-                    0,            # File comment length
-                    0,            # Disk number - since zip64
-                    0,            # Internal file attributes - is binary
-                    external_attr,
-                    0xffffffff if needs_zip64 else file_offset,
-                ))
-                yield from _(name_encoded)
-                yield from _(extra)
+            data_func = \
+                _zip64_local_header_and_data if method is ZIP64 else \
+                _zip_local_header_and_data if method is ZIP else \
+                _uncompressed_local_header_and_data
+            central_directory.append((yield from data_func(name_encoded, mod_at_encoded, external_attr, chunks)))
+
+        central_directory_start_offset = offset
+
+        for central_directory_header_entry, name_encoded, extra in central_directory:
+            yield from _(central_directory_header_signature)
+            yield from _(central_directory_header_entry)
+            yield from _(name_encoded)
+            yield from _(extra)
 
         central_directory_end_offset = offset
         central_directory_size = central_directory_end_offset - central_directory_start_offset
 
         needs_zip64_end_of_central_directory = \
-            len(directory) >= 0xffff or \
+            len(central_directory) >= 0xffff or \
             central_directory_size >= 0xffffffff or \
             central_directory_start_offset >= 0xffffffff
 
@@ -287,8 +284,8 @@ def stream_zip(files, chunk_size=65536):
                 45,  # Version required
                 0,   # Disk number
                 0,   # Disk number with central directory
-                len(directory),  # On this disk
-                len(directory),  # In total
+                len(central_directory),  # On this disk
+                len(central_directory),  # In total
                 central_directory_size,
                 central_directory_start_offset,
             ))
@@ -315,8 +312,8 @@ def stream_zip(files, chunk_size=65536):
             yield from _(end_of_central_directory_struct.pack(
                 0,  # Disk number
                 0,  # Disk number with central directory
-                len(directory),  # On this disk
-                len(directory),  # In total
+                len(central_directory),  # On this disk
+                len(central_directory),  # In total
                 central_directory_size,
                 central_directory_start_offset,
                 0, # ZIP file comment length
