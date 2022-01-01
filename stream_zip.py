@@ -161,7 +161,9 @@ def stream_zip(files, chunk_size=65536):
 
         for file_offset, name_encoded, mod_at_encoded, perms, method, compressed_size, uncompressed_size, crc_32 in directory:
 
-            yield from _(central_directory_header_signature)
+            external_attr = \
+                (perms << 16) | \
+                (0x10 if name_encoded[-1:] == b'/' else 0x0)  # MS-DOS directory
 
             if method == ZIP64:
                 directory_extra = \
@@ -173,14 +175,7 @@ def stream_zip(files, chunk_size=65536):
                         file_offset,
                         0,   # Disk number
                     )
-            else:
-                directory_extra = b''
-
-            external_attr = \
-                (perms << 16) | \
-                (0x10 if name_encoded[-1:] == b'/' else 0x0)  # MS-DOS directory
-
-            if method == ZIP64:
+                yield from _(central_directory_header_signature)
                 yield from _(central_directory_header_struct.pack(
                     45,           # Version made by
                     45,           # Version required
@@ -199,6 +194,8 @@ def stream_zip(files, chunk_size=65536):
                     0xffffffff,   # Offset of local header - since zip64
                 ))
             elif method == ZIP:
+                directory_extra = b''
+                yield from _(central_directory_header_signature)
                 yield from _(central_directory_header_struct.pack(
                     20,           # Version made by
                     20,           # Version required
@@ -217,6 +214,8 @@ def stream_zip(files, chunk_size=65536):
                     file_offset,  # Offset of local header - since zip64
                 ))
             else:
+                directory_extra = b''
+                yield from _(central_directory_header_signature)
                 yield from _(central_directory_header_struct.pack(
                     20,           # Version made by
                     20,           # Version required
