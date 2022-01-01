@@ -191,6 +191,7 @@ def stream_zip(files, chunk_size=65536):
                 uncompressed_size += len(chunk)
             compressed_size = uncompressed_size
             needs_zip64 = uncompressed_size >= 0xffffffff or file_offset >= 0xffffffff
+            version = 45 if needs_zip64 else 20
             extra = \
                 zip64_extra_struct.pack(
                     zip64_extra_signature,
@@ -203,7 +204,7 @@ def stream_zip(files, chunk_size=65536):
                 b''
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
-                20,           # Version
+                version,
                 b'\x00\x00',  # Flags
                 0,            # Compression - no compression
                 mod_at_encoded,
@@ -220,8 +221,8 @@ def stream_zip(files, chunk_size=65536):
                 yield from _(chunk)
 
             return central_directory_header_struct.pack(
-               20,           # Version made by
-               20,           # Version required
+               version,      # Made by
+               version,      # Required
                b'\x00\x00',  # Flags
                0,            # Compression - none
                mod_at_encoded,
