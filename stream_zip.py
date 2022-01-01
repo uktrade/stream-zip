@@ -147,9 +147,8 @@ def stream_zip(files, chunk_size=65536):
                     yield from _(compressed_chunk)
 
                 compressed_chunk = compress_obj.flush()
-                if compressed_chunk:
-                    compressed_size += len(compressed_chunk)
-                    yield from _(compressed_chunk)
+                compressed_size += len(compressed_chunk)
+                yield from _(compressed_chunk)
 
                 data_descriptor_struct = \
                     data_descriptor_zip64_struct if method is ZIP64 else \
