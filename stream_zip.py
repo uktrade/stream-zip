@@ -56,7 +56,7 @@ def stream_zip(files, chunk_size=65536):
         end_of_central_directory_struct = Struct('<HHHHIIH')
         
         zip64_extra_signature = b'\x01\x00'
-        zip64_extra_struct = Struct('<HQQQI')
+        zip64_extra_struct = Struct('<2sHQQQI')
 
         modified_at_struct = Struct('<HH')
 
@@ -90,15 +90,14 @@ def stream_zip(files, chunk_size=65536):
             yield from _(data_descriptor_signature)
             yield from _(data_descriptor_zip64_struct.pack(crc_32, compressed_size, uncompressed_size))
 
-            extra = \
-                zip64_extra_signature + \
-                zip64_extra_struct.pack(
-                    28,  # Size of extra
-                    uncompressed_size,
-                    compressed_size,
-                    file_offset,
-                    0,   # Disk number
-                )
+            extra = zip64_extra_struct.pack(
+                zip64_extra_signature,
+                28,  # Size of extra
+                uncompressed_size,
+                compressed_size,
+                file_offset,
+                0,   # Disk number
+            )
             return central_directory_header_struct.pack(
                 45,           # Version made by
                 45,           # Version required
@@ -193,15 +192,13 @@ def stream_zip(files, chunk_size=65536):
             compressed_size = uncompressed_size
             needs_zip64 = uncompressed_size >= 0xffffffff or file_offset >= 0xffffffff
             extra = \
-                (
-                    zip64_extra_signature + \
-                    zip64_extra_struct.pack(
-                        28,  # Size of extra
-                        uncompressed_size,
-                        compressed_size,
-                        file_offset,
-                        0,   # Disk number
-                    )
+                zip64_extra_struct.pack(
+                    zip64_extra_signature,
+                    28,  # Size of extra
+                    uncompressed_size,
+                    compressed_size,
+                    file_offset,
+                    0,   # Disk number
                 ) if needs_zip64 else \
                 b''
             yield from _(local_header_signature)
