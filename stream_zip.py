@@ -159,10 +159,7 @@ def stream_zip(files, chunk_size=65536):
 
         central_directory_start_offset = offset
 
-        any_zip64 = False
-
         for file_offset, name_encoded, mod_at_encoded, perms, method, compressed_size, uncompressed_size, crc_32 in directory:
-            any_zip64 = any_zip64 or method == ZIP64
 
             yield from _(central_directory_header_signature)
 
@@ -245,7 +242,12 @@ def stream_zip(files, chunk_size=65536):
 
         zip64_end_of_central_directory_offset = offset
 
-        if any_zip64:
+        needs_zip64_end_of_central_directory = \
+            len(directory) >= 0xffff or \
+            central_directory_size >= 0xffffffff or \
+            central_directory_start_offset >= 0xffffffff
+
+        if needs_zip64_end_of_central_directory:
             yield from _(zip64_end_of_central_directory_signature)
             yield from _(zip64_end_of_central_directory_struct.pack(
                 44,  # Size of zip64 end of central directory record
@@ -267,7 +269,7 @@ def stream_zip(files, chunk_size=65536):
             ))
 
         yield from _(end_of_central_directory_signature)
-        if any_zip64:
+        if needs_zip64_end_of_central_directory:
             yield from _(end_of_central_directory_struct.pack(
                 0xffff,      # Disk number - since zip64
                 0xffff,      # Disk number with central directory - since zip64
