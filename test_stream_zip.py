@@ -8,7 +8,7 @@ from zipfile import ZipFile
 import pytest
 from stream_unzip import stream_unzip
 
-from stream_zip import stream_zip, NO_COMPRESSION, ZIP64, ZIP
+from stream_zip import stream_zip, NO_COMPRESSION, ZIP64, ZIP, CompressedSizeOverflowError, UncompressedSizeOverflowError
 
 
 def test_with_stream_unzip_zip64():
@@ -106,6 +106,40 @@ def test_with_stream_unzip_large_not_easily_compressible():
             num_received += len(chunk)
 
     assert num_received == 10000000001
+
+
+def test_zip_overflow_large_not_easily_compressible():
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    perms = 0o600
+    batch = os.urandom(1000000)
+
+    def files():
+        def data():
+            for i in range(0, 10000):
+                yield batch
+
+        yield 'file-1', now, perms, ZIP, data()
+
+    with pytest.raises(CompressedSizeOverflowError):
+        for chunk in stream_zip(files()):
+            pass
+
+
+def test_zip_overflow_large_easily_compressible():
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    perms = 0o600
+    batch = b'-' * 1000000
+
+    def files():
+        def data():
+            for i in range(0, 10000):
+                yield batch
+
+        yield 'file-1', now, perms, ZIP, data()
+
+    with pytest.raises(UncompressedSizeOverflowError):
+        for chunk in stream_zip(files()):
+            pass
 
 
 def test_with_zipfile_zip64():

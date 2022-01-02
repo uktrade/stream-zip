@@ -93,7 +93,11 @@ def stream_zip(files, chunk_size=65536):
             yield from _(name_encoded)
             yield from _(extra)
 
-            uncompressed_size, compressed_size, crc_32 = yield from _zip_or_zip64_data(chunks)
+            uncompressed_size, compressed_size, crc_32 = yield from _zip_or_zip64_data(
+                chunks,
+                max_uncompressed_size=0xffffffffffffffff,
+                max_compressed_size=0xffffffffffffffff,
+            )
 
             yield from _(data_descriptor_signature)
             yield from _(data_descriptor_zip64_struct.pack(crc_32, compressed_size, uncompressed_size))
@@ -140,7 +144,11 @@ def stream_zip(files, chunk_size=65536):
             ))
             yield from _(name_encoded)
 
-            uncompressed_size, compressed_size, crc_32 = yield from _zip_or_zip64_data(chunks)
+            uncompressed_size, compressed_size, crc_32 = yield from _zip_or_zip64_data(
+                chunks,
+                max_uncompressed_size=0xffffffff,
+                max_compressed_size=0xffffffff,
+            )
 
             yield from _(data_descriptor_signature)
             yield from _(data_descriptor_zip_struct.pack(crc_32, compressed_size, uncompressed_size))
@@ -164,7 +172,7 @@ def stream_zip(files, chunk_size=65536):
                 file_offset,
             ), name_encoded, extra
 
-        def _zip_or_zip64_data(chunks):
+        def _zip_or_zip64_data(chunks, max_uncompressed_size, max_compressed_size):
             # The data is identical for ZIP and ZIP64
 
             uncompressed_size = 0
@@ -173,9 +181,17 @@ def stream_zip(files, chunk_size=65536):
             compress_obj = zlib.compressobj(wbits=-zlib.MAX_WBITS, level=9)
             for chunk in evenly_sized(chunks):
                 uncompressed_size += len(chunk)
+
+                if uncompressed_size > max_uncompressed_size:
+                    raise UncompressedSizeOverflowError()
+
                 crc_32 = zlib.crc32(chunk, crc_32)
                 compressed_chunk = compress_obj.compress(chunk)
                 compressed_size += len(compressed_chunk)
+
+                if compressed_size > max_compressed_size:
+                    raise CompressedSizeOverflowError()
+
                 yield from _(compressed_chunk)
 
             compressed_chunk = compress_obj.flush()
@@ -372,3 +388,23 @@ def stream_zip(files, chunk_size=65536):
 
     zipped_chunks = get_zipped_chunks_uneven()
     yield from evenly_sized(zipped_chunks)
+
+
+class ZipError(Exception):
+    pass
+
+
+class ZipValueError(ZipError, ValueError):
+    pass
+
+
+class ZipOverflowError(ZipValueError, OverflowError):
+    pass
+
+
+class UncompressedSizeOverflowError(ZipOverflowError):
+    pass
+
+
+class CompressedSizeOverflowError(ZipOverflowError):
+    pass
