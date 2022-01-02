@@ -56,7 +56,8 @@ def stream_zip(files, chunk_size=65536):
         end_of_central_directory_struct = Struct('<HHHHIIH')
         
         zip64_extra_signature = b'\x01\x00'
-        zip64_extra_struct = Struct('<2sHQQQI')
+        zip64_local_extra_struct = Struct('<2sHQQ')
+        zip64_central_directory_extra_struct = Struct('<2sHQQQI')
 
         modified_at_struct = Struct('<HH')
 
@@ -71,6 +72,12 @@ def stream_zip(files, chunk_size=65536):
         def _zip64_local_header_and_data(name_encoded, mod_at_encoded, external_attr, chunks):
             file_offset = offset
 
+            extra = zip64_local_extra_struct.pack(
+                zip64_extra_signature,
+                16,  # Size of extra
+                0,   # Uncompressed size - since data descriptor
+                0,   # Compressed size - since data descriptor
+            )
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 45,           # Version
@@ -81,16 +88,17 @@ def stream_zip(files, chunk_size=65536):
                 0xffffffff,   # Compressed size - since zip64
                 0xffffffff,   # Uncompressed size - since zip64
                 len(name_encoded),
-                0,            # Length of local extra
+                len(extra),
             ))
             yield from _(name_encoded)
+            yield from _(extra)
 
             uncompressed_size, compressed_size, crc_32 = yield from _zip_or_zip64_data(chunks)
 
             yield from _(data_descriptor_signature)
             yield from _(data_descriptor_zip64_struct.pack(crc_32, compressed_size, uncompressed_size))
 
-            extra = zip64_extra_struct.pack(
+            extra = zip64_central_directory_extra_struct.pack(
                 zip64_extra_signature,
                 28,  # Size of extra
                 uncompressed_size,
@@ -193,13 +201,11 @@ def stream_zip(files, chunk_size=65536):
             needs_zip64 = uncompressed_size >= 0xffffffff or file_offset >= 0xffffffff
 
             def _with_zip64():
-                extra = zip64_extra_struct.pack(
+                extra = zip64_local_extra_struct.pack(
                     zip64_extra_signature,
-                    28,  # Size of extra
+                    16,  # Size of extra
                     uncompressed_size,
                     compressed_size,
-                    file_offset,
-                    0,   # Disk number
                 )
                 yield from _(local_header_signature)
                 yield from _(local_header_struct.pack(
@@ -219,6 +225,14 @@ def stream_zip(files, chunk_size=65536):
                 for chunk in chunks:
                     yield from _(chunk)
 
+                extra = zip64_central_directory_extra_struct.pack(
+                    zip64_extra_signature,
+                    28,  # Size of extra
+                    uncompressed_size,
+                    compressed_size,
+                    file_offset,
+                    0,   # Disk number
+                )
                 return central_directory_header_struct.pack(
                    45,           # Version made by
                    45,           # Version required
