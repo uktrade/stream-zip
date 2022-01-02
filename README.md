@@ -54,3 +54,26 @@ It's not possible to _completely_ stream-write ZIP files. Small bits of metadata
 No compression is supported via the `NO_COMPRESSION` constant as in the above examples. However in this case the entire contents of these are buffered in memory, and so this should not be used for large files. This is because for uncompressed data, its size and CRC32 must be _before_ it in the ZIP file.
 
 It doesn't seem possible to automatically choose [ZIP64](https://en.wikipedia.org/wiki/ZIP_(file_format)#ZIP64) based on file sizes if streaming, since the specification of ZIP vs ZIP64 must be _before_ the compressed data of each file in the final stream, and so before the sizes are known. Hence the onus is on client code to choose. ZIP has greater support but is limited to 4GiB (gibibyte), while ZIP64 has less support, but has a much greater limit of 16EiB (exbibyte). These limits apply to the compressed size of each member file, the uncompressed size of each member file, and to the size of the entire archive.
+
+
+## Exception hierarchy
+
+  - **ZipError**
+
+    Base class for all explicitly-thrown exceptions
+
+    - **ZipValueError** (also inherits from the **ValueError** built-in)
+
+      Base class for errors relating to invalid arguments
+
+      - **ZipOverflowError (also inherits from the **OverflowError** built-in)**
+
+        The sizes of data are too large to store in the requested mode
+
+        - **UncompressedSizeOverflowError**
+
+          The uncompressed size of the data is too large. The maximum uncompressed size for ZIP mode is 2^32 - 1 bytes, and for ZIP64 mode is 2^64 - 1 bytes.
+
+        - **CompressedSizeOverflowError**
+
+          The compressed size of the data is too large. The maximum compressed size for ZIP mode is 2^32 - 1 bytes, and for ZIP64 mode is 2^64 - 1 bytes.
