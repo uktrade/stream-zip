@@ -77,3 +77,7 @@ It doesn't seem possible to automatically choose [ZIP64](https://en.wikipedia.or
         - **CompressedSizeOverflowError**
 
           The compressed size of the data is too large. The maximum compressed size for ZIP mode is 2^32 - 1 bytes, and for ZIP64 mode is 2^64 - 1 bytes.
+
+        - **OffsetOverflowError**
+
+          The offset of files in the archive is too high, i.e. the archive is too large. The limit for ZIP mode is 2^32 - 1 bytes, and for ZIP64 mode is 2^64 - 1 bytes.
