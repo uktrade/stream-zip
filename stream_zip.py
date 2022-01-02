@@ -220,8 +220,8 @@ def stream_zip(files, chunk_size=65536):
                     yield from _(chunk)
 
                 return central_directory_header_struct.pack(
-                   20,           # Version made by
-                   20,           # Version required
+                   45,           # Version made by
+                   45,           # Version required
                    b'\x00\x00',  # Flags
                    0,            # Compression - none
                    mod_at_encoded,
