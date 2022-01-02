@@ -57,7 +57,7 @@ def stream_zip(files, chunk_size=65536):
         
         zip64_extra_signature = b'\x01\x00'
         zip64_local_extra_struct = Struct('<2sHQQ')
-        zip64_central_directory_extra_struct = Struct('<2sHQQQI')
+        zip64_central_directory_extra_struct = Struct('<2sHQQQ')
 
         modified_at_struct = Struct('<HH')
 
@@ -100,11 +100,10 @@ def stream_zip(files, chunk_size=65536):
 
             extra = zip64_central_directory_extra_struct.pack(
                 zip64_extra_signature,
-                28,  # Size of extra
+                24,  # Size of extra
                 uncompressed_size,
                 compressed_size,
                 file_offset,
-                0,   # Disk number
             )
             return central_directory_header_struct.pack(
                 45,           # Version made by
@@ -118,7 +117,7 @@ def stream_zip(files, chunk_size=65536):
                 len(name_encoded),
                 len(extra),
                 0,            # File comment length
-                0xffff,       # Disk number - since zip64
+                0,            # Disk number
                 0,            # Internal file attributes - is binary
                 external_attr,
                 0xffffffff,   # Offset of local header - since zip64
@@ -227,11 +226,10 @@ def stream_zip(files, chunk_size=65536):
 
                 extra = zip64_central_directory_extra_struct.pack(
                     zip64_extra_signature,
-                    28,  # Size of extra
+                    24,  # Size of extra
                     uncompressed_size,
                     compressed_size,
                     file_offset,
-                    0,   # Disk number
                 )
                 return central_directory_header_struct.pack(
                    45,           # Version made by
@@ -245,7 +243,7 @@ def stream_zip(files, chunk_size=65536):
                    len(name_encoded),
                    len(extra),
                    0,            # File comment length
-                   0xffff,       # Disk number - since zip64
+                   0,            # Disk number
                    0,            # Internal file attributes - is binary
                    external_attr,
                    0xffffffff,   # File offset - since zip64
