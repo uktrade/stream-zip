@@ -66,7 +66,7 @@ It doesn't seem possible to automatically choose [ZIP64](https://en.wikipedia.or
 
       Base class for errors relating to invalid arguments
 
-      - **ZipOverflowError** (also inherits from the **OverflowError** built-in)**
+      - **ZipOverflowError** (also inherits from the **OverflowError** built-in)
 
         The sizes of data are too large to store in the requested mode
 
