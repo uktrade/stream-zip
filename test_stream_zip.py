@@ -8,7 +8,16 @@ from zipfile import ZipFile
 import pytest
 from stream_unzip import stream_unzip
 
-from stream_zip import stream_zip, NO_COMPRESSION_32, ZIP_64, ZIP_32, CompressedSizeOverflowError, UncompressedSizeOverflowError, OffsetOverflowError
+from stream_zip import (
+    stream_zip,
+    NO_COMPRESSION_64,
+    NO_COMPRESSION_32,
+    ZIP_64,
+    ZIP_32,
+    CompressedSizeOverflowError,
+    UncompressedSizeOverflowError,
+    OffsetOverflowError,
+)
 
 
 def test_with_stream_unzip_zip_64():
@@ -87,7 +96,7 @@ def test_with_stream_unzip_large_easily_compressible():
     assert num_received == 5000000000
 
 
-def test_with_stream_unzip_large_not_easily_compressible():
+def test_with_stream_unzip_large_not_easily_compressible_with_no_compression_64():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
     batch = os.urandom(500000)
@@ -98,7 +107,7 @@ def test_with_stream_unzip_large_not_easily_compressible():
                 yield batch
 
         yield 'file-1', now, perms, ZIP_64, data()
-        yield 'file-2', now, perms, NO_COMPRESSION_32, (b'-',)  # Must be ZIP_64 due to its offset
+        yield 'file-2', now, perms, NO_COMPRESSION_64, (b'-',)
 
     num_received = 0
     for name, size, chunks in stream_unzip(stream_zip(files())):
@@ -106,6 +115,25 @@ def test_with_stream_unzip_large_not_easily_compressible():
             num_received += len(chunk)
 
     assert num_received == 5000000001
+
+
+def test_with_stream_unzip_large_not_easily_compressible_with_no_compression_32():
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    perms = 0o600
+    batch = os.urandom(500000)
+
+    def files():
+        def data():
+            for i in range(0, 10000):
+                yield batch
+
+        yield 'file-1', now, perms, ZIP_64, data()
+        yield 'file-2', now, perms, NO_COMPRESSION_32, (b'-',)
+
+    with pytest.raises(OffsetOverflowError):
+        for name, size, chunks in stream_unzip(stream_zip(files())):
+            for chunk in chunks:
+                pass
 
 
 def test_with_stream_unzip_large_not_easily_compressible_with_zip_32():

@@ -3,6 +3,7 @@ from struct import Struct
 import zlib
 
 NO_COMPRESSION_32 = object()
+NO_COMPRESSION_64 = object()
 ZIP_32 = object()
 ZIP_64 = object()
 
@@ -69,10 +70,14 @@ def stream_zip(files, chunk_size=65536):
             offset += len(chunk)
             yield chunk
 
+        def _raise_if_beyond(offset, maximum, exception_class):
+            if offset > maximum:
+                raise exception_class()
+
         def _zip_64_local_header_and_data(name_encoded, mod_at_encoded, external_attr, chunks):
             file_offset = offset
 
-            _raise_if_beyond(file_offset, maximum_offset=0xffffffffffffffff)
+            _raise_if_beyond(file_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
 
             extra = zip_64_local_extra_struct.pack(
                 zip_64_extra_signature,
@@ -129,14 +134,10 @@ def stream_zip(files, chunk_size=65536):
                 0xffffffff,   # Offset of local header - since zip64
             ), name_encoded, extra
 
-        def _raise_if_beyond(offset, maximum_offset):
-            if offset > maximum_offset:
-                raise OffsetOverflowError()
-
         def _zip_32_local_header_and_data(name_encoded, mod_at_encoded, external_attr, chunks):
             file_offset = offset
 
-            _raise_if_beyond(file_offset, maximum_offset=0xffffffff)
+            _raise_if_beyond(file_offset, maximum=0xffffffff, exception_class=OffsetOverflowError)
 
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
@@ -208,112 +209,125 @@ def stream_zip(files, chunk_size=65536):
 
             return uncompressed_size, compressed_size, crc_32
 
-        def _uncompressed_local_header_and_data(name_encoded, mod_at_encoded, external_attr, chunks):
+        def _no_compression_64_local_header_and_data(name_encoded, mod_at_encoded, external_attr, chunks):
             file_offset = offset
 
+            _raise_if_beyond(file_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
+
+            chunks, size, crc_32 = _no_compression_32_and_64_buffered_data_and_size_and_crc_32(chunks, maximum_size=0xffffffffffffffff)
+
+            extra = zip_64_local_extra_struct.pack(
+                zip_64_extra_signature,
+                16,    # Size of extra
+                size,  # Uncompressed
+                size,  # Compressed
+            )
+            yield from _(local_header_signature)
+            yield from _(local_header_struct.pack(
+                45,           # Version
+                b'\x00\x00',  # Flags
+                0,            # Compression - no compression
+                mod_at_encoded,
+                crc_32,
+                0xffffffff,   # Compressed size - since zip64
+                0xffffffff,   # Uncompressed size - since zip64
+                len(name_encoded),
+                len(extra),
+            ))
+            yield from _(name_encoded)
+            yield from _(extra)
+
+            for chunk in chunks:
+                yield from _(chunk)
+
+            extra = zip_64_central_directory_extra_struct.pack(
+                zip_64_extra_signature,
+                24,    # Size of extra
+                size,  # Uncompressed
+                size,  # Compressed
+                file_offset,
+            )
+            return central_directory_header_struct.pack(
+               45,           # Version made by
+               45,           # Version required
+               b'\x00\x00',  # Flags
+               0,            # Compression - none
+               mod_at_encoded,
+               crc_32,
+               0xffffffff,   # Compressed size - since zip64
+               0xffffffff,   # Uncompressed size - since zip64
+               len(name_encoded),
+               len(extra),
+               0,            # File comment length
+               0,            # Disk number
+               0,            # Internal file attributes - is binary
+               external_attr,
+               0xffffffff,   # File offset - since zip64
+            ), name_encoded, extra
+
+
+        def _no_compression_32_local_header_and_data(name_encoded, mod_at_encoded, external_attr, chunks):
+            file_offset = offset
+
+            _raise_if_beyond(file_offset, maximum=0xffffffff, exception_class=OffsetOverflowError)
+
+            chunks, size, crc_32 = _no_compression_32_and_64_buffered_data_and_size_and_crc_32(chunks, maximum_size=0xffffffff)
+
+            extra = b''
+            yield from _(local_header_signature)
+            yield from _(local_header_struct.pack(
+                20,           # Version
+                b'\x00\x00',  # Flags
+                0,            # Compression - no compression
+                mod_at_encoded,
+                crc_32,
+                size,         # Compressed
+                size,         # Uncompressed
+                len(name_encoded),
+                len(extra),
+            ))
+            yield from _(name_encoded)
+            yield from _(extra)
+
+            for chunk in chunks:
+                yield from _(chunk)
+
+            return central_directory_header_struct.pack(
+               20,           # Version made by
+               20,           # Version required
+               b'\x00\x00',  # Flags
+               0,            # Compression - none
+               mod_at_encoded,
+               crc_32,
+               size,         # Compressed
+               size,         # Uncompressed
+               len(name_encoded),
+               len(extra),
+               0,            # File comment length
+               0,            # Disk number
+               0,            # Internal file attributes - is binary
+               external_attr,
+               file_offset,
+            ), name_encoded, extra
+
+        def _no_compression_32_and_64_buffered_data_and_size_and_crc_32(chunks, maximum_size):
             # We cannot have a data descriptor, and so have to be able to determine the total
             # length and CRC32 before output ofchunks to client code
-            chunks = tuple(chunks)
-            uncompressed_size = 0
-            compressed_size = 0
+
+            size = 0
             crc_32 = zlib.crc32(b'')
-            for chunk in chunks:
-                crc_32 = zlib.crc32(chunk, crc_32)
-                uncompressed_size += len(chunk)
-            compressed_size = uncompressed_size
-            needs_zip_64 = uncompressed_size >= 0xffffffff or file_offset >= 0xffffffff
 
-            def _with_zip_64():
-                extra = zip_64_local_extra_struct.pack(
-                    zip_64_extra_signature,
-                    16,  # Size of extra
-                    uncompressed_size,
-                    compressed_size,
-                )
-                yield from _(local_header_signature)
-                yield from _(local_header_struct.pack(
-                    45,           # Version
-                    b'\x00\x00',  # Flags
-                    0,            # Compression - no compression
-                    mod_at_encoded,
-                    crc_32,
-                    0xffffffff,
-                    0xffffffff,
-                    len(name_encoded),
-                    len(extra),
-                ))
-                yield from _(name_encoded)
-                yield from _(extra)
-
+            def _chunks():
+                nonlocal size, crc_32
                 for chunk in chunks:
-                    yield from _(chunk)
+                    size += len(chunk)
+                    _raise_if_beyond(size, maximum=maximum_size, exception_class=UncompressedSizeOverflowError)
+                    crc_32 = zlib.crc32(chunk, crc_32)
+                    yield chunk
 
-                extra = zip_64_central_directory_extra_struct.pack(
-                    zip_64_extra_signature,
-                    24,  # Size of extra
-                    uncompressed_size,
-                    compressed_size,
-                    file_offset,
-                )
-                return central_directory_header_struct.pack(
-                   45,           # Version made by
-                   45,           # Version required
-                   b'\x00\x00',  # Flags
-                   0,            # Compression - none
-                   mod_at_encoded,
-                   crc_32,
-                   0xffffffff,   # Compressed size - since zip64
-                   0xffffffff,   # Uncompressed size - since zip64
-                   len(name_encoded),
-                   len(extra),
-                   0,            # File comment length
-                   0,            # Disk number
-                   0,            # Internal file attributes - is binary
-                   external_attr,
-                   0xffffffff,   # File offset - since zip64
-                ), name_encoded, extra
+            chunks = tuple(_chunks())
 
-            def _without_zip_64():
-                extra = b''
-                yield from _(local_header_signature)
-                yield from _(local_header_struct.pack(
-                    20,           # Version
-                    b'\x00\x00',  # Flags
-                    0,            # Compression - no compression
-                    mod_at_encoded,
-                    crc_32,
-                    compressed_size,
-                    uncompressed_size,
-                    len(name_encoded),
-                    len(extra),
-                ))
-                yield from _(name_encoded)
-                yield from _(extra)
-
-                for chunk in chunks:
-                    yield from _(chunk)
-
-                return central_directory_header_struct.pack(
-                   20,           # Version made by
-                   20,           # Version required
-                   b'\x00\x00',  # Flags
-                   0,            # Compression - none
-                   mod_at_encoded,
-                   crc_32,
-                   compressed_size,
-                   uncompressed_size,
-                   len(name_encoded),
-                   len(extra),
-                   0,            # File comment length
-                   0,            # Disk number
-                   0,            # Internal file attributes - is binary
-                   external_attr,
-                   file_offset,
-                ), name_encoded, extra
-
-            return \
-                _with_zip_64() if needs_zip_64 else \
-                _without_zip_64()
+            return chunks, size, crc_32
 
         for name, modified_at, perms, method, chunks in files:
             name_encoded = name.encode()
@@ -332,7 +346,8 @@ def stream_zip(files, chunk_size=65536):
             data_func = \
                 _zip_64_local_header_and_data if method is ZIP_64 else \
                 _zip_32_local_header_and_data if method is ZIP_32 else \
-                _uncompressed_local_header_and_data
+                _no_compression_64_local_header_and_data if method is NO_COMPRESSION_64 else \
+                _no_compression_32_local_header_and_data
             central_directory.append((yield from data_func(name_encoded, mod_at_encoded, external_attr, chunks)))
 
         central_directory_start_offset = offset
