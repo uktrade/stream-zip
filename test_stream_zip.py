@@ -17,6 +17,7 @@ from stream_zip import (
     CompressedSizeOverflowError,
     UncompressedSizeOverflowError,
     OffsetOverflowError,
+    CentralDirectoryNumberOfEntriesOverflowError,
 )
 
 
@@ -329,13 +330,13 @@ def test_with_zipfile_without_compression():
     )] == list(extracted())
 
 
-def test_with_zipfile_many_files():
+def test_with_zipfile_many_files_zip_64():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
 
     def files():
         for i in range(0, 100000):
-            yield f'file-{i}', now, perms, ZIP_32, (b'ab',)
+            yield f'file-{i}', now, perms, ZIP_64, (b'ab',)
 
     def extracted():
         with ZipFile(BytesIO(b''.join(stream_zip(files())))) as my_zip:
@@ -344,6 +345,19 @@ def test_with_zipfile_many_files():
                     yield None
 
     assert len(list(extracted())) == 100000
+
+
+def test_with_zipfile_many_files_zip_32():
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    perms = 0o600
+
+    def files():
+        for i in range(0, 100000):
+            yield f'file-{i}', now, perms, ZIP_32, (b'ab',)
+
+        with pytest.raises(CentralDirectoryNumberOfEntriesOverflowError):
+            for chunk in stream_zip(files()):
+                pass
 
 
 def test_directory_zipfile():

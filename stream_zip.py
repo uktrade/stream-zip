@@ -63,6 +63,7 @@ def stream_zip(files, chunk_size=65536):
         modified_at_struct = Struct('<HH')
 
         central_directory = deque()
+        zip_64_central_directory = False
         offset = 0
 
         def _(chunk):
@@ -330,6 +331,7 @@ def stream_zip(files, chunk_size=65536):
             return chunks, size, crc_32
 
         for name, modified_at, perms, method, chunks in files:
+            zip_64_central_directory = zip_64_central_directory or method in (ZIP_64, NO_COMPRESSION_64)
             name_encoded = name.encode()
             mod_at_encoded = modified_at_struct.pack(
                 int(modified_at.second / 2) | \
@@ -361,12 +363,15 @@ def stream_zip(files, chunk_size=65536):
         central_directory_end_offset = offset
         central_directory_size = central_directory_end_offset - central_directory_start_offset
 
-        needs_zip_64_end_of_central_directory = \
-            len(central_directory) >= 0xffff or \
-            central_directory_size >= 0xffffffff or \
-            central_directory_start_offset >= 0xffffffff
+        max_central_directory_length, max_central_directory_start_offset, max_central_directory_size = \
+            (0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff) if zip_64_central_directory else \
+            (0xffff, 0xffffffff, 0xffffffff)
 
-        if needs_zip_64_end_of_central_directory:
+        _raise_if_beyond(len(central_directory), maximum=max_central_directory_length, exception_class=CentralDirectoryNumberOfEntriesOverflowError)
+        _raise_if_beyond(central_directory_start_offset, maximum=max_central_directory_start_offset, exception_class=OffsetOverflowError)
+        _raise_if_beyond(central_directory_size, maximum=max_central_directory_size, exception_class=CentralDirectorySizeOverflowError)
+
+        if zip_64_central_directory:
             yield from _(zip_64_end_of_central_directory_signature)
             yield from _(zip_64_end_of_central_directory_struct.pack(
                 44,  # Size of zip_64 end of central directory record
@@ -433,5 +438,13 @@ class CompressedSizeOverflowError(ZipOverflowError):
     pass
 
 
+class CentralDirectorySizeOverflowError(ZipOverflowError):
+    pass
+
+
 class OffsetOverflowError(ZipOverflowError):
+    pass
+
+
+class CentralDirectoryNumberOfEntriesOverflowError(ZipOverflowError):
     pass
