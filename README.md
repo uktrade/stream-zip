@@ -18,7 +18,7 @@ pip install stream-zip
 
 ```python
 from datetime import datetime
-from stream_zip import ZIP_64, ZIP_32, NO_COMPRESSION_32, stream_zip
+from stream_zip import ZIP_64, ZIP_32, NO_COMPRESSION_64, NO_COMPRESSION_32, stream_zip
 
 def unzipped_files():
     modified_at = datetime.now()
@@ -30,17 +30,17 @@ def unzipped_files():
     def file_2_data():
         yield b'Some bytes'
 
-    def file_3_data():
-        yield b'Some bytes'
-
     # ZIP_64 mode
     yield 'my-file-1.txt', modified_at, perms, ZIP_64, file_1_data()
 
     # ZIP_32 mode
     yield 'my-file-1.txt', modified_at, perms, ZIP_32, file_2_data()
 
-    # No compression
-    yield 'my-file-2.txt', modified_at, perms, NO_COMPRESSION_32, file_3_data()
+    # No compression for ZIP_32 files
+    yield 'my-file-2.txt', modified_at, perms, NO_COMPRESSION_64, file_1_data()
+
+    # No compression for ZIP_64 files
+    yield 'my-file-2.txt', modified_at, perms, NO_COMPRESSION_32, file_2_data()
 
 for zipped_chunk in stream_zip(unzipped_files()):
     print(zipped_chunk)
@@ -51,7 +51,7 @@ for zipped_chunk in stream_zip(unzipped_files()):
 
 It's not possible to _completely_ stream-write ZIP files. Small bits of metadata for each member file, such as its name, must be placed at the _end_ of the ZIP. In order to do this, stream-unzip buffers this metadata in memory until it can be output.
 
-No compression is supported via the `NO_COMPRESSION_32` constant as in the above examples. However in this case the entire contents of these are buffered in memory, and so this should not be used for large files. This is because for uncompressed data, its size and CRC32 must be _before_ it in the ZIP file.
+No compression is supported via the `NO_COMPRESSION_*` constants as in the above examples. However in these cases the entire contents of each are buffered in memory, and so should not be used for large files. This is because for uncompressed data, its size and CRC32 must be _before_ it in the ZIP file.
 
 It doesn't seem possible to automatically choose [ZIP_64](https://en.wikipedia.org/wiki/ZIP_(file_format)#ZIP64) based on file sizes if streaming, since the specification of ZIP_32 vs ZIP_64 must be _before_ the compressed data of each file in the final stream, and so before the sizes are known. Hence the onus is on client code to choose. ZIP_32 has greater support but is limited to 4GiB (gibibyte), while ZIP_64 has less support, but has a much greater limit of 16EiB (exbibyte). These limits apply to the compressed size of each member file, the uncompressed size of each member file, and to the size of the entire archive.
 
