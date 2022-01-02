@@ -332,7 +332,10 @@ def stream_zip(files, chunk_size=65536):
 
         for name, modified_at, perms, method, chunks in files:
             zip_64_central_directory = zip_64_central_directory or method in (ZIP_64, NO_COMPRESSION_64)
+
             name_encoded = name.encode()
+            _raise_if_beyond(len(name_encoded), maximum=0xffff, exception_class=NameLengthOverflowError)
+
             mod_at_encoded = modified_at_struct.pack(
                 int(modified_at.second / 2) | \
                 (modified_at.minute << 5) | \
@@ -447,4 +450,8 @@ class OffsetOverflowError(ZipOverflowError):
 
 
 class CentralDirectoryNumberOfEntriesOverflowError(ZipOverflowError):
+    pass
+
+
+class NameLengthOverflowError(ZipOverflowError):
     pass
