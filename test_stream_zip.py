@@ -70,7 +70,7 @@ def test_with_stream_unzip_with_no_compresion_32():
 def test_with_stream_unzip_large_easily_compressible():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
-    batch = b'-' * 1000000
+    batch = b'-' * 500000
 
     def files():
         def data():
@@ -84,13 +84,13 @@ def test_with_stream_unzip_large_easily_compressible():
         for chunk in chunks:
             num_received += len(chunk)
 
-    assert num_received == 10000000000
+    assert num_received == 5000000000
 
 
 def test_with_stream_unzip_large_not_easily_compressible():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
-    batch = os.urandom(1000000)
+    batch = os.urandom(500000)
 
     def files():
         def data():
@@ -105,13 +105,13 @@ def test_with_stream_unzip_large_not_easily_compressible():
         for chunk in chunks:
             num_received += len(chunk)
 
-    assert num_received == 10000000001
+    assert num_received == 5000000001
 
 
 def test_with_stream_unzip_large_not_easily_compressible_with_zip_32():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
-    batch = os.urandom(1000000)
+    batch = os.urandom(500000)
 
     def files():
         def data():
@@ -130,7 +130,7 @@ def test_with_stream_unzip_large_not_easily_compressible_with_zip_32():
 def test_zip_overflow_large_not_easily_compressible():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
-    batch = os.urandom(1000000)
+    batch = os.urandom(500000)
 
     def files():
         def data():
@@ -458,7 +458,7 @@ def test_chunk_sizes():
     perms = 0o600
 
     def files():
-        yield 'file-1', now, perms, ZIP_64, (os.urandom(1000000),)
+        yield 'file-1', now, perms, ZIP_64, (os.urandom(500000),)
 
     def get_sizes():
         for chunk in stream_zip(files()):
