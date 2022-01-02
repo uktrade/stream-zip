@@ -72,6 +72,8 @@ def stream_zip(files, chunk_size=65536):
         def _zip64_local_header_and_data(name_encoded, mod_at_encoded, external_attr, chunks):
             file_offset = offset
 
+            _raise_if_beyond(file_offset, maximum_offset=0xffffffffffffffff)
+
             extra = zip64_local_extra_struct.pack(
                 zip64_extra_signature,
                 16,  # Size of extra
@@ -127,8 +129,14 @@ def stream_zip(files, chunk_size=65536):
                 0xffffffff,   # Offset of local header - since zip64
             ), name_encoded, extra
 
+        def _raise_if_beyond(offset, maximum_offset):
+            if offset > maximum_offset:
+                raise OffsetOverflowError()
+
         def _zip_local_header_and_data(name_encoded, mod_at_encoded, external_attr, chunks):
             file_offset = offset
+
+            _raise_if_beyond(file_offset, maximum_offset=0xffffffff)
 
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
@@ -407,4 +415,8 @@ class UncompressedSizeOverflowError(ZipOverflowError):
 
 
 class CompressedSizeOverflowError(ZipOverflowError):
+    pass
+
+
+class OffsetOverflowError(ZipOverflowError):
     pass
