@@ -8,16 +8,16 @@ from zipfile import ZipFile
 import pytest
 from stream_unzip import stream_unzip
 
-from stream_zip import stream_zip, NO_COMPRESSION, ZIP64, ZIP, CompressedSizeOverflowError, UncompressedSizeOverflowError, OffsetOverflowError
+from stream_zip import stream_zip, NO_COMPRESSION_32, ZIP_64, ZIP_32, CompressedSizeOverflowError, UncompressedSizeOverflowError, OffsetOverflowError
 
 
-def test_with_stream_unzip_zip64():
+def test_with_stream_unzip_zip_64():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
 
     def files():
-        yield 'file-1', now, perms, ZIP64, (b'a' * 10000, b'b' * 10000)
-        yield 'file-2', now, perms, ZIP64, (b'c', b'd')
+        yield 'file-1', now, perms, ZIP_64, (b'a' * 10000, b'b' * 10000)
+        yield 'file-2', now, perms, ZIP_64, (b'c', b'd')
 
     assert [(b'file-1', None, b'a' * 10000 + b'b' * 10000), (b'file-2', None, b'cd')] == [
         (name, size, b''.join(chunks))
@@ -25,13 +25,13 @@ def test_with_stream_unzip_zip64():
     ]
 
 
-def test_with_stream_unzip_zip():
+def test_with_stream_unzip_zip_32():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
 
     def files():
-        yield 'file-1', now, perms, ZIP, (b'a' * 10000, b'b' * 10000)
-        yield 'file-2', now, perms, ZIP, (b'c', b'd')
+        yield 'file-1', now, perms, ZIP_32, (b'a' * 10000, b'b' * 10000)
+        yield 'file-2', now, perms, ZIP_32, (b'c', b'd')
 
     assert [(b'file-1', None, b'a' * 10000 + b'b' * 10000), (b'file-2', None, b'cd')] == [
         (name, size, b''.join(chunks))
@@ -39,13 +39,13 @@ def test_with_stream_unzip_zip():
     ]
 
 
-def test_with_stream_unzip_zip_and_zip64():
+def test_with_stream_unzip_zip_32_and_zip_64():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
 
     def files():
-        yield 'file-1', now, perms, ZIP64, (b'a' * 10000, b'b' * 10000)
-        yield 'file-2', now, perms, ZIP, (b'c', b'd')
+        yield 'file-1', now, perms, ZIP_64, (b'a' * 10000, b'b' * 10000)
+        yield 'file-2', now, perms, ZIP_32, (b'c', b'd')
 
     assert [(b'file-1', None, b'a' * 10000 + b'b' * 10000), (b'file-2', None, b'cd')] == [
         (name, size, b''.join(chunks))
@@ -53,13 +53,13 @@ def test_with_stream_unzip_zip_and_zip64():
     ]
 
 
-def test_with_stream_unzip_without_compresion():
+def test_with_stream_unzip_with_no_compresion_32():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
 
     def files():
-        yield 'file-1', now, perms, NO_COMPRESSION, (b'a' * 10000, b'b' * 10000)
-        yield 'file-2', now, perms, NO_COMPRESSION, (b'c', b'd')
+        yield 'file-1', now, perms, NO_COMPRESSION_32, (b'a' * 10000, b'b' * 10000)
+        yield 'file-2', now, perms, NO_COMPRESSION_32, (b'c', b'd')
 
     assert [(b'file-1', 20000, b'a' * 10000 + b'b' * 10000), (b'file-2', 2, b'cd')] == [
         (name, size, b''.join(chunks))
@@ -77,7 +77,7 @@ def test_with_stream_unzip_large_easily_compressible():
             for i in range(0, 10000):
                 yield batch
 
-        yield 'file-1', now, perms, ZIP64, data()
+        yield 'file-1', now, perms, ZIP_64, data()
 
     num_received = 0
     for name, size, chunks in stream_unzip(stream_zip(files())):
@@ -97,8 +97,8 @@ def test_with_stream_unzip_large_not_easily_compressible():
             for i in range(0, 10000):
                 yield batch
 
-        yield 'file-1', now, perms, ZIP64, data()
-        yield 'file-2', now, perms, NO_COMPRESSION, (b'-',)  # Must be ZIP64 due to its offset
+        yield 'file-1', now, perms, ZIP_64, data()
+        yield 'file-2', now, perms, NO_COMPRESSION_32, (b'-',)  # Must be ZIP_64 due to its offset
 
     num_received = 0
     for name, size, chunks in stream_unzip(stream_zip(files())):
@@ -108,7 +108,7 @@ def test_with_stream_unzip_large_not_easily_compressible():
     assert num_received == 10000000001
 
 
-def test_with_stream_unzip_large_not_easily_compressible_with_zip():
+def test_with_stream_unzip_large_not_easily_compressible_with_zip_32():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
     batch = os.urandom(1000000)
@@ -118,8 +118,8 @@ def test_with_stream_unzip_large_not_easily_compressible_with_zip():
             for i in range(0, 10000):
                 yield batch
 
-        yield 'file-1', now, perms, ZIP64, data()
-        yield 'file-2', now, perms, ZIP, (b'-',)  # Needs a ZIP64 offset, but is in ZIP mode
+        yield 'file-1', now, perms, ZIP_64, data()
+        yield 'file-2', now, perms, ZIP_32, (b'-',)  # Needs a ZIP_64 offset, but is in ZIP_32 mode
 
     with pytest.raises(OffsetOverflowError):
         for name, size, chunks in stream_unzip(stream_zip(files())):
@@ -137,7 +137,7 @@ def test_zip_overflow_large_not_easily_compressible():
             for i in range(0, 10000):
                 yield batch
 
-        yield 'file-1', now, perms, ZIP, data()
+        yield 'file-1', now, perms, ZIP_32, data()
 
     with pytest.raises(CompressedSizeOverflowError):
         for chunk in stream_zip(files()):
@@ -154,20 +154,20 @@ def test_zip_overflow_large_easily_compressible():
             for i in range(0, 10000):
                 yield batch
 
-        yield 'file-1', now, perms, ZIP, data()
+        yield 'file-1', now, perms, ZIP_32, data()
 
     with pytest.raises(UncompressedSizeOverflowError):
         for chunk in stream_zip(files()):
             pass
 
 
-def test_with_zipfile_zip64():
+def test_with_zipfile_zip_64():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
 
     def files():
-        yield 'file-1', now, perms, ZIP64, (b'a' * 10000, b'b' * 10000)
-        yield 'file-2', now, perms, ZIP64, (b'c', b'd')
+        yield 'file-1', now, perms, ZIP_64, (b'a' * 10000, b'b' * 10000)
+        yield 'file-2', now, perms, ZIP_64, (b'c', b'd')
 
     def extracted():
         with ZipFile(BytesIO(b''.join(stream_zip(files())))) as my_zip:
@@ -196,13 +196,13 @@ def test_with_zipfile_zip64():
     )] == list(extracted())
 
 
-def test_with_zipfile_zip():
+def test_with_zipfile_zip_32():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
 
     def files():
-        yield 'file-1', now, perms, ZIP, (b'a' * 10000, b'b' * 10000)
-        yield 'file-2', now, perms, ZIP, (b'c', b'd')
+        yield 'file-1', now, perms, ZIP_32, (b'a' * 10000, b'b' * 10000)
+        yield 'file-2', now, perms, ZIP_32, (b'c', b'd')
 
     def extracted():
         with ZipFile(BytesIO(b''.join(stream_zip(files())))) as my_zip:
@@ -231,13 +231,13 @@ def test_with_zipfile_zip():
     )] == list(extracted())
 
 
-def test_with_zipfile_zip_and_zip64():
+def test_with_zipfile_zip_32_and_zip_64():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
 
     def files():
-        yield 'file-1', now, perms, ZIP64, (b'a' * 10000, b'b' * 10000)
-        yield 'file-2', now, perms, ZIP, (b'c', b'd')
+        yield 'file-1', now, perms, ZIP_64, (b'a' * 10000, b'b' * 10000)
+        yield 'file-2', now, perms, ZIP_32, (b'c', b'd')
 
     def extracted():
         with ZipFile(BytesIO(b''.join(stream_zip(files())))) as my_zip:
@@ -271,8 +271,8 @@ def test_with_zipfile_without_compression():
     perms = 0o600
 
     def files():
-        yield 'file-1', now, perms, NO_COMPRESSION, (b'a' * 10000, b'b' * 10000)
-        yield 'file-2', now, perms, NO_COMPRESSION, (b'c', b'd')
+        yield 'file-1', now, perms, NO_COMPRESSION_32, (b'a' * 10000, b'b' * 10000)
+        yield 'file-2', now, perms, NO_COMPRESSION_32, (b'c', b'd')
 
     def extracted():
         with ZipFile(BytesIO(b''.join(stream_zip(files())))) as my_zip:
@@ -307,7 +307,7 @@ def test_with_zipfile_many_files():
 
     def files():
         for i in range(0, 100000):
-            yield f'file-{i}', now, perms, ZIP, (b'ab',)
+            yield f'file-{i}', now, perms, ZIP_32, (b'ab',)
 
     def extracted():
         with ZipFile(BytesIO(b''.join(stream_zip(files())))) as my_zip:
@@ -323,8 +323,8 @@ def test_directory_zipfile():
     perms = 0o600
 
     def files():
-        yield 'file-1', now, perms, ZIP64, (b'a' * 10000, b'b' * 10000)
-        yield 'file-2/', now, perms, ZIP64, ()
+        yield 'file-1', now, perms, ZIP_64, (b'a' * 10000, b'b' * 10000)
+        yield 'file-2/', now, perms, ZIP_64, ()
 
     def extracted():
         with ZipFile(BytesIO(b''.join(stream_zip(files())))) as my_zip:
@@ -358,8 +358,8 @@ def test_with_unzip_zip64():
     perms = 0o600
 
     def files():
-        yield 'file-1', now, perms, ZIP64, (b'a' * 10000, b'b' * 10000)
-        yield 'file-2', now, perms, ZIP64, (b'c', b'd')
+        yield 'file-1', now, perms, ZIP_64, (b'a' * 10000, b'b' * 10000)
+        yield 'file-2', now, perms, ZIP_64, (b'c', b'd')
 
     def extracted():
         with TemporaryDirectory() as d:
@@ -382,13 +382,13 @@ def test_with_unzip_zip64():
     )] == list(extracted())
 
 
-def test_with_unzip_zip_and_64():
+def test_with_unzip_zip_32_and_zip_64():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
 
     def files():
-        yield 'file-1', now, perms, ZIP64, (b'a' * 10000, b'b' * 10000)
-        yield 'file-2', now, perms, ZIP, (b'c', b'd')
+        yield 'file-1', now, perms, ZIP_64, (b'a' * 10000, b'b' * 10000)
+        yield 'file-2', now, perms, ZIP_32, (b'c', b'd')
 
     def extracted():
         with TemporaryDirectory() as d:
@@ -411,13 +411,13 @@ def test_with_unzip_zip_and_64():
     )] == list(extracted())
 
 
-def test_with_unzip_without_compression():
+def test_with_unzip_with_no_compression_32():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
 
     def files():
-        yield 'file-1', now, perms, NO_COMPRESSION, (b'a' * 10000, b'b' * 10000)
-        yield 'file-2', now, perms, NO_COMPRESSION, (b'c', b'd')
+        yield 'file-1', now, perms, NO_COMPRESSION_32, (b'a' * 10000, b'b' * 10000)
+        yield 'file-2', now, perms, NO_COMPRESSION_32, (b'c', b'd')
 
     def extracted():
         with TemporaryDirectory() as d:
@@ -445,7 +445,7 @@ def test_exception_propagates():
     perms = 0o600
 
     def files():
-        yield 'file-1', now, perms, ZIP64, (b'a' * 10000, b'b' * 10000)
+        yield 'file-1', now, perms, ZIP_64, (b'a' * 10000, b'b' * 10000)
         raise Exception('From generator')
 
     with pytest.raises(Exception,  match='From generator'):
@@ -458,7 +458,7 @@ def test_chunk_sizes():
     perms = 0o600
 
     def files():
-        yield 'file-1', now, perms, ZIP64, (os.urandom(1000000),)
+        yield 'file-1', now, perms, ZIP_64, (os.urandom(1000000),)
 
     def get_sizes():
         for chunk in stream_zip(files()):
