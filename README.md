@@ -100,7 +100,7 @@ It doesn't seem possible to automatically choose [ZIP_64](https://en.wikipedia.o
 
           The offset of data in the ZIP is too high, i.e. the ZIP is too large. The limit for ZIP_32 mode is 2^32 - 1 bytes, and for ZIP_64 mode is 2^64 - 1 bytes.
 
-          This can be raised when stream-zip adds member files, or when it add the central directory at the end of the ZIP file. If any `_64` mode files are in the ZIP, the central directory is in ZIP_64 mode, and ZIP_32 mode otherwise.
+          This can be raised when stream-zip adds member files, or when it adds the central directory at the end of the ZIP file. If any `_64` mode files are in the ZIP, the central directory is in ZIP_64 mode, and ZIP_32 mode otherwise.
 
         - **NameLengthOverflowError**
 
