@@ -102,6 +102,8 @@ It doesn't seem possible to automatically choose [ZIP_64](https://en.wikipedia.o
 
           This can be raised when stream-zip adds member files, or when it adds the central directory at the end of the ZIP file. If any `_64` mode files are in the ZIP, the central directory is in ZIP_64 mode, and ZIP_32 mode otherwise.
 
+          It is possible for the ZIP file to be larger than the maximum allowed offset without this exception being thrown. For example in ZIP_32 mode the archive can can be larger than 2^32 - 1 bytes.
+
         - **NameLengthOverflowError**
 
           The length of a file name is too high. The limit is 2^16 - 1 bytes, and applied to file names after UTF-8 encoding.
