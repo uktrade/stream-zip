@@ -183,8 +183,6 @@ def stream_zip(files, chunk_size=65536):
             ), name_encoded, extra
 
         def _zip_32_or_zip_64_data(chunks, max_uncompressed_size, max_compressed_size):
-            # The data is identical for ZIP_32 and ZIP_64
-
             uncompressed_size = 0
             compressed_size = 0
             crc_32 = zlib.crc32(b'')
