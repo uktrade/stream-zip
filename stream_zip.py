@@ -192,15 +192,13 @@ def stream_zip(files, chunk_size=65536):
             for chunk in evenly_sized(chunks):
                 uncompressed_size += len(chunk)
 
-                if uncompressed_size > max_uncompressed_size:
-                    raise UncompressedSizeOverflowError()
+                _raise_if_beyond(uncompressed_size, maximum=max_uncompressed_size, exception_class=UncompressedSizeOverflowError)
 
                 crc_32 = zlib.crc32(chunk, crc_32)
                 compressed_chunk = compress_obj.compress(chunk)
                 compressed_size += len(compressed_chunk)
 
-                if compressed_size > max_compressed_size:
-                    raise CompressedSizeOverflowError()
+                _raise_if_beyond(compressed_size, maximum=max_compressed_size, exception_class=CompressedSizeOverflowError)
 
                 yield from _(compressed_chunk)
 
