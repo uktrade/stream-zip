@@ -187,7 +187,7 @@ def stream_zip(files, chunk_size=65536):
             compressed_size = 0
             crc_32 = zlib.crc32(b'')
             compress_obj = zlib.compressobj(wbits=-zlib.MAX_WBITS, level=9)
-            for chunk in evenly_sized(chunks):
+            for chunk in chunks:
                 uncompressed_size += len(chunk)
 
                 _raise_if_beyond(uncompressed_size, maximum=max_uncompressed_size, exception_class=UncompressedSizeOverflowError)
@@ -349,7 +349,7 @@ def stream_zip(files, chunk_size=65536):
                 _zip_32_local_header_and_data if method is ZIP_32 else \
                 _no_compression_64_local_header_and_data if method is NO_COMPRESSION_64 else \
                 _no_compression_32_local_header_and_data
-            central_directory.append((yield from data_func(name_encoded, mod_at_encoded, external_attr, chunks)))
+            central_directory.append((yield from data_func(name_encoded, mod_at_encoded, external_attr, evenly_sized(chunks))))
 
         central_directory_start_offset = offset
 
