@@ -356,9 +356,9 @@ def test_too_many_files_zip_32():
         for i in range(0, 100000):
             yield f'file-{i}', now, perms, ZIP_32, (b'ab',)
 
-        with pytest.raises(CentralDirectoryNumberOfEntriesOverflowError):
-            for chunk in stream_zip(files()):
-                pass
+    with pytest.raises(CentralDirectoryNumberOfEntriesOverflowError):
+        for chunk in stream_zip(files()):
+            pass
 
 
 def test_directory_zipfile():
