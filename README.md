@@ -86,7 +86,7 @@ It doesn't seem possible to automatically choose [ZIP_64](https://en.wikipedia.o
 
         - **CentralDirectorySizeOverflowError**
 
-          The size of the _central directory_, a section at the end of the ZIP that lists all the member files. The maximum size for ZIP_32 mode is 2^32 - 1 bytes, and for ZIP_64 mode is 2^64 - 1 bytes.
+          The size of the central directory, a section at the end of the ZIP that lists all the member files. The maximum size for ZIP_32 mode is 2^32 - 1 bytes, and for ZIP_64 mode is 2^64 - 1 bytes.
 
           If any `_64` mode files are in the ZIP, the central directory is in ZIP_64 mode, and ZIP_32 mode otherwise.
 
