@@ -101,7 +101,7 @@ def stream_zip(files, chunk_size=65536):
             yield from _(name_encoded)
             yield from _(extra)
 
-            uncompressed_size, compressed_size, crc_32 = yield from _zip_32_or_zip_64_data(
+            uncompressed_size, compressed_size, crc_32 = yield from _zip_data(
                 chunks,
                 max_uncompressed_size=0xffffffffffffffff,
                 max_compressed_size=0xffffffffffffffff,
@@ -154,7 +154,7 @@ def stream_zip(files, chunk_size=65536):
             ))
             yield from _(name_encoded)
 
-            uncompressed_size, compressed_size, crc_32 = yield from _zip_32_or_zip_64_data(
+            uncompressed_size, compressed_size, crc_32 = yield from _zip_data(
                 chunks,
                 max_uncompressed_size=0xffffffff,
                 max_compressed_size=0xffffffff,
@@ -182,7 +182,7 @@ def stream_zip(files, chunk_size=65536):
                 file_offset,
             ), name_encoded, extra
 
-        def _zip_32_or_zip_64_data(chunks, max_uncompressed_size, max_compressed_size):
+        def _zip_data(chunks, max_uncompressed_size, max_compressed_size):
             uncompressed_size = 0
             compressed_size = 0
             crc_32 = zlib.crc32(b'')
@@ -211,7 +211,7 @@ def stream_zip(files, chunk_size=65536):
 
             _raise_if_beyond(file_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
 
-            chunks, size, crc_32 = _no_compression_32_and_64_buffered_data_and_size_and_crc_32(chunks, maximum_size=0xffffffffffffffff)
+            chunks, size, crc_32 = _no_compression_buffered_data_size_crc_32(chunks, maximum_size=0xffffffffffffffff)
 
             extra = zip_64_local_extra_struct.pack(
                 zip_64_extra_signature,
@@ -268,7 +268,7 @@ def stream_zip(files, chunk_size=65536):
 
             _raise_if_beyond(file_offset, maximum=0xffffffff, exception_class=OffsetOverflowError)
 
-            chunks, size, crc_32 = _no_compression_32_and_64_buffered_data_and_size_and_crc_32(chunks, maximum_size=0xffffffff)
+            chunks, size, crc_32 = _no_compression_buffered_data_size_crc_32(chunks, maximum_size=0xffffffff)
 
             extra = b''
             yield from _(local_header_signature)
@@ -307,7 +307,7 @@ def stream_zip(files, chunk_size=65536):
                file_offset,
             ), name_encoded, extra
 
-        def _no_compression_32_and_64_buffered_data_and_size_and_crc_32(chunks, maximum_size):
+        def _no_compression_buffered_data_size_crc_32(chunks, maximum_size):
             # We cannot have a data descriptor, and so have to be able to determine the total
             # length and CRC32 before output ofchunks to client code
 
