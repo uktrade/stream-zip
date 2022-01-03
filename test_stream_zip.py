@@ -18,6 +18,7 @@ from stream_zip import (
     UncompressedSizeOverflowError,
     OffsetOverflowError,
     CentralDirectoryNumberOfEntriesOverflowError,
+    CentralDirectorySizeOverflowError,
     NameLengthOverflowError,
 )
 
@@ -366,6 +367,19 @@ def test_too_many_files_zip_32():
             yield f'file-{i}', now, perms, ZIP_32, (b'ab',)
 
     with pytest.raises(CentralDirectoryNumberOfEntriesOverflowError):
+        for chunk in stream_zip(files()):
+            pass
+
+
+def test_central_directory_size_overflow():
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    perms = 0o600
+
+    def files():
+        for i in range(0, 0xffff):
+            yield str(i).zfill(5) + '-' * 65502, now, perms, NO_COMPRESSION_32, (b'',)
+
+    with pytest.raises(CentralDirectorySizeOverflowError):
         for chunk in stream_zip(files()):
             pass
 
