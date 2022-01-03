@@ -356,6 +356,8 @@ def stream_zip(files, chunk_size=65536):
             (0xffff, 0xffffffff, 0xffffffff)
 
         central_directory_start_offset = offset
+        central_directory_end_offset = offset
+        central_directory_size = central_directory_end_offset - central_directory_start_offset
         _raise_if_beyond(central_directory_start_offset, maximum=max_central_directory_start_offset, exception_class=OffsetOverflowError)
         _raise_if_beyond(len(central_directory), maximum=max_central_directory_length, exception_class=CentralDirectoryNumberOfEntriesOverflowError)
 
@@ -365,10 +367,10 @@ def stream_zip(files, chunk_size=65536):
             yield from _(name_encoded)
             yield from _(extra)
 
-        central_directory_end_offset = offset
-        central_directory_size = central_directory_end_offset - central_directory_start_offset
+            central_directory_end_offset = offset
+            central_directory_size = central_directory_end_offset - central_directory_start_offset
 
-        _raise_if_beyond(central_directory_size, maximum=max_central_directory_size, exception_class=CentralDirectorySizeOverflowError)
+            _raise_if_beyond(central_directory_size, maximum=max_central_directory_size, exception_class=CentralDirectorySizeOverflowError)
 
         if zip_64_central_directory:
             _raise_if_beyond(central_directory_end_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
