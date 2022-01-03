@@ -348,7 +348,7 @@ def test_with_zipfile_many_files_zip_64():
     assert len(list(extracted())) == 100000
 
 
-def test_with_zipfile_many_files_zip_32():
+def test_too_many_files_zip_32():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
 
