@@ -18,6 +18,7 @@ from stream_zip import (
     UncompressedSizeOverflowError,
     OffsetOverflowError,
     CentralDirectoryNumberOfEntriesOverflowError,
+    NameLengthOverflowError,
 )
 
 
@@ -480,6 +481,18 @@ def test_with_unzip_with_no_compression_32():
         'file-2',
         b'cd',
     )] == list(extracted())
+
+
+def test_name_length_overflow():
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    perms = 0o600
+
+    def files():
+        yield '-' * (2**16), now, perms, ZIP_64, (b'ab',)
+
+    with pytest.raises(NameLengthOverflowError):
+        for chunk in stream_zip(files()):
+            pass
 
 
 def test_exception_propagates():
