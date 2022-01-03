@@ -8,7 +8,7 @@ def long_description():
 
 setuptools.setup(
     name='stream-zip',
-    version='0.0.36',
+    version='0.0.37',
     author='Department for International Trade',
     author_email='sre@digital.trade.gov.uk',
     description='Python function to construct a ZIP archive with stream processing - without having to store the entire ZIP in memory or disk',
