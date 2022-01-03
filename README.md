@@ -74,15 +74,15 @@ It doesn't seem possible to automatically choose [ZIP_64](https://en.wikipedia.o
 
       - **ZipOverflowError** (also inherits from the **OverflowError** built-in)
 
-        The sizes of data are too large to store in the requested mode
+        The size or positions of data in the ZIP are too large to store in the requested mode
 
         - **UncompressedSizeOverflowError**
 
-          The uncompressed size of the data is too large. The maximum uncompressed size for ZIP_32 mode is 2^32 - 1 bytes, and for ZIP_64 mode is 2^64 - 1 bytes.
+          The uncompressed size of a member file is too large. The maximum uncompressed size for ZIP_32 mode is 2^32 - 1 bytes, and for ZIP_64 mode is 2^64 - 1 bytes.
 
         - **CompressedSizeOverflowError**
 
-          The compressed size of the data is too large. The maximum compressed size for ZIP_32 mode is 2^32 - 1 bytes, and for ZIP_64 mode is 2^64 - 1 bytes.
+          The compressed size of a member file is too large. The maximum compressed size for ZIP_32 mode is 2^32 - 1 bytes, and for ZIP_64 mode is 2^64 - 1 bytes.
 
         - **CentralDirectorySizeOverflowError**
 
