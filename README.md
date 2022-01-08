@@ -55,6 +55,40 @@ for zipped_chunk in stream_zip(unzipped_files()):
 ```
 
 
+## File-like object
+
+If you need a file-like object rather than an iterable yielding bytes, you can pass the return value of `stream_zip` through `to_file_like_obj` defined as below.
+
+```python
+def to_file_like_obj(iterable):
+    chunk = b''
+    offset = 0
+    it = iter(iterable)
+
+    def up_to_iter(size):
+        nonlocal chunk, offset
+
+        while size:
+            if offset == len(chunk):
+                try:
+                    chunk = next(it)
+                except StopIteration:
+                    break
+                else:
+                    offset = 0
+            to_yield = min(size, len(chunk) - offset)
+            offset = offset + to_yield
+            size -= to_yield
+            yield chunk[offset - to_yield:offset]
+
+    class FileLikeObj:
+        def read(self, size=-1):
+            return b''.join(up_to_iter(float('inf') if size is None or size < 0 else size))
+
+    return FileLikeObj()
+```
+
+
 ## Limitations
 
 It's not possible to _completely_ stream-write ZIP files. Small bits of metadata for each member file, such as its name, must be placed at the _end_ of the ZIP. In order to do this, stream-unzip buffers this metadata in memory until it can be output.
