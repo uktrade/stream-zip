@@ -91,7 +91,7 @@ def to_file_like_obj(iterable):
 
 ## Limitations
 
-It's not possible to _completely_ stream-write ZIP files. Small bits of metadata for each member file, such as its name, must be placed at the _end_ of the ZIP. In order to do this, stream-unzip buffers this metadata in memory until it can be output.
+It's not possible to _completely_ stream-write ZIP files. Small bits of metadata for each member file, such as its name, must be placed at the _end_ of the ZIP. In order to do this, stream-zip buffers this metadata in memory until it can be output.
 
 No compression is supported via the `NO_COMPRESSION_*` constants as in the above examples. However in these cases the entire contents of each uncompressed file is buffered in memory, and so should not be used for large files. This is because for uncompressed data, its size and CRC32 must be _before_ it in the ZIP file.
 
