@@ -16,6 +16,8 @@ pip install stream-zip
 
 ## Usage
 
+The function `stream_zip` takes a nested iterable of the files and data to go into the ZIP, and it returns an iterable of the bytes of the zip file.
+
 ```python
 from datetime import datetime
 from stream_zip import ZIP_64, ZIP_32, NO_COMPRESSION_64, NO_COMPRESSION_32, stream_zip
