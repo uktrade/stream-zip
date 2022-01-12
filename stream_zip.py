@@ -89,7 +89,7 @@ def stream_zip(files, chunk_size=65536):
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 45,           # Version
-                b'\x08\x00',  # Flags - data descriptor
+                b'\x08\x08',  # Flags - data descriptor and utf-8 file names
                 8,            # Compression - deflate
                 mod_at_encoded,
                 0,            # CRC32 - 0 since data descriptor
@@ -120,7 +120,7 @@ def stream_zip(files, chunk_size=65536):
             return central_directory_header_struct.pack(
                 45,           # Version made by
                 45,           # Version required
-                b'\x08\x00',  # Flags - data descriptor
+                b'\x08\x08',  # Flags - data descriptor and utf-8 file names
                 8,            # Compression - deflate
                 mod_at_encoded,
                 crc_32,
@@ -143,7 +143,7 @@ def stream_zip(files, chunk_size=65536):
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 20,           # Version
-                b'\x08\x00',  # Flags - data descriptor
+                b'\x08\x08',  # Flags - data descriptor and utf-8 file names
                 8,            # Compression - deflate
                 mod_at_encoded,
                 0,            # CRC32 - 0 since data descriptor
@@ -167,7 +167,7 @@ def stream_zip(files, chunk_size=65536):
             return central_directory_header_struct.pack(
                 20,           # Version made by
                 20,           # Version required
-                b'\x08\x00',  # Flags - data descriptor
+                b'\x08\x08',  # Flags - data descriptor and utf-8 file names
                 8,            # Compression - deflate
                 mod_at_encoded,
                 crc_32,
@@ -222,7 +222,7 @@ def stream_zip(files, chunk_size=65536):
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 45,           # Version
-                b'\x00\x00',  # Flags
+                b'\x00\x08',  # Flags - utf-8 file names
                 0,            # Compression - no compression
                 mod_at_encoded,
                 crc_32,
@@ -247,7 +247,7 @@ def stream_zip(files, chunk_size=65536):
             return central_directory_header_struct.pack(
                45,           # Version made by
                45,           # Version required
-               b'\x00\x00',  # Flags
+               b'\x00\x08',  # Flags - utf-8 file names
                0,            # Compression - none
                mod_at_encoded,
                crc_32,
@@ -274,7 +274,7 @@ def stream_zip(files, chunk_size=65536):
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 20,           # Version
-                b'\x00\x00',  # Flags
+                b'\x00\x08',  # Flags - utf-8 file names
                 0,            # Compression - no compression
                 mod_at_encoded,
                 crc_32,
@@ -292,7 +292,7 @@ def stream_zip(files, chunk_size=65536):
             return central_directory_header_struct.pack(
                20,           # Version made by
                20,           # Version required
-               b'\x00\x00',  # Flags
+               b'\x00\x08',  # Flags - utf-8 file names
                0,            # Compression - none
                mod_at_encoded,
                crc_32,
@@ -329,7 +329,7 @@ def stream_zip(files, chunk_size=65536):
         for name, modified_at, perms, method, chunks in files:
             zip_64_central_directory = zip_64_central_directory or method in (ZIP_64, NO_COMPRESSION_64)
 
-            name_encoded = name.encode()
+            name_encoded = name.encode('utf-8')
             _raise_if_beyond(len(name_encoded), maximum=0xffff, exception_class=NameLengthOverflowError)
 
             mod_at_encoded = modified_at_struct.pack(
