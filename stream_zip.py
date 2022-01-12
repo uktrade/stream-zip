@@ -202,6 +202,9 @@ def stream_zip(files, chunk_size=65536):
 
             compressed_chunk = compress_obj.flush()
             compressed_size += len(compressed_chunk)
+
+            _raise_if_beyond(compressed_size, maximum=max_compressed_size, exception_class=CompressedSizeOverflowError)
+
             yield from _(compressed_chunk)
 
             return uncompressed_size, compressed_size, crc_32
