@@ -197,8 +197,8 @@ def test_with_zipfile_zip_64():
     perms = 0o600
 
     def files():
-        yield 'file-1', now, perms, ZIP_64, (b'a' * 10000, b'b' * 10000)
-        yield 'file-2', now, perms, ZIP_64, (b'c', b'd')
+        yield 'file-1 🍰', now, perms, ZIP_64, (b'a' * 10000, b'b' * 10000)
+        yield 'file-2 🍰', now, perms, ZIP_64, (b'c', b'd')
 
     def extracted():
         with ZipFile(BytesIO(b''.join(stream_zip(files())))) as my_zip:
@@ -213,13 +213,13 @@ def test_with_zipfile_zip_64():
                     )
 
     assert [(
-        'file-1',
+        'file-1 🍰',
         20000,
         (2021, 1, 1, 21, 1, 12),
         perms << 16,
         b'a' * 10000 + b'b' * 10000,
     ), (
-        'file-2',
+        'file-2 🍰',
         2,
         (2021, 1, 1, 21, 1, 12),
         perms << 16,
