@@ -7,7 +7,7 @@ NO_COMPRESSION_64 = object()
 ZIP_32 = object()
 ZIP_64 = object()
 
-def stream_zip(files, chunk_size=65536):
+def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj(wbits=-zlib.MAX_WBITS, level=9)):
 
     def evenly_sized(chunks):
         chunk = b''
@@ -186,7 +186,7 @@ def stream_zip(files, chunk_size=65536):
             uncompressed_size = 0
             compressed_size = 0
             crc_32 = zlib.crc32(b'')
-            compress_obj = zlib.compressobj(wbits=-zlib.MAX_WBITS, level=9)
+            compress_obj = get_compressobj()
             for chunk in chunks:
                 uncompressed_size += len(chunk)
 
