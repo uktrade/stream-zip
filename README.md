@@ -98,7 +98,7 @@ def to_file_like_obj(iterable):
     return FileLikeObj()
 ```
 
-This can be used to upload large ZIP files to S3 using [boto3's upload_fileobj](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_fileobj), which can splits larger files for multipart upload.
+This can be used to upload large ZIP files to S3 using [boto3's upload_fileobj](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_fileobj), which split larger files into multipart uploads.
 
 ```python
 import boto3
