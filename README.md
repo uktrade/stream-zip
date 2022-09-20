@@ -110,6 +110,18 @@ s3.upload_fileobj(zipped_chunks_obj, 'mybucket', 'mykey')
 ```
 
 
+## Custom chunk size
+
+The default `bytes` instance size is 65536 bytes. To customise this, you can override the `chunk_size` parameter.
+
+```python
+for zipped_chunk in stream_zip(unzipped_files(), chunk_size=65536):
+    print(zipped_chunk)
+```
+
+This one size is used both for input - splitting or gathering any uncompressed data into `chunk_size` bytes before attempting to compress it, and in output - splitting or gathering any compressed data into `chunk_size` bytes before returning it to client code.
+
+
 ## Limitations
 
 It's not possible to _completely_ stream-write ZIP files. Small bits of metadata for each member file, such as its name, must be placed at the _end_ of the ZIP. In order to do this, stream-zip buffers this metadata in memory until it can be output.
