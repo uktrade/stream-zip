@@ -98,6 +98,17 @@ def to_file_like_obj(iterable):
     return FileLikeObj()
 ```
 
+This can be used to upload large ZIP files to S3 using [boto3's upload_fileobj](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_fileobj).
+
+```python
+import boto3
+s3 = boto3.client('s3')
+
+zipped_chunks = stream_zip(unzipped_files())
+zipped_chunks_obj = to_file_like_obj(zipped_chunks)
+s3.upload_fileobj(zipped_chunks_obj, 'mybucket', 'mykey')
+```
+
 
 ## Limitations
 
