@@ -102,11 +102,20 @@ This can be used to upload large ZIP files to S3 using [boto3's upload_fileobj](
 
 ```python
 import boto3
-s3 = boto3.client('s3')
+from boto3.s3.transfer import TransferConfig
 
 zipped_chunks = stream_zip(unzipped_files())
 zipped_chunks_obj = to_file_like_obj(zipped_chunks)
-s3.upload_fileobj(zipped_chunks_obj, 'mybucket', 'mykey')
+
+s3 = boto3.client('s3')
+s3.upload_fileobj(
+    zipped_chunks_obj, 'mybucket', 'mykey',
+    # Since we're streaming the final total size is unknown, so we have to tell boto3
+    # what part size to use to accomodate the entire file - S3 has a hard coded limit
+    # of 10000 parts
+    # In this example we choose a part size of 200MB, so 2TB maximum final object size
+    Config=TransferConfig(multipart_chunksize=1024 * 1024 * 200),
+)
 ```
 
 
