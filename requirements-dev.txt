@@ -12,19 +12,19 @@ coverage[toml]==6.2
     # via
     #   -r requirements-dev.in
     #   pytest-cov
+exceptiongroup==1.0.0
+    # via pytest
 iniconfig==1.1.1
     # via pytest
 packaging==21.3
     # via pytest
 pluggy==1.0.0
     # via pytest
-py==1.11.0
-    # via pytest
 pycryptodome==3.12.0
     # via stream-unzip
 pyparsing==3.0.6
     # via packaging
-pytest==6.2.5
+pytest==7.2.0
     # via
     #   -r requirements-dev.in
     #   pytest-cov
@@ -34,7 +34,7 @@ stream-inflate==0.0.14
     # via stream-unzip
 stream-unzip==0.0.68
     # via -r requirements-dev.in
-toml==0.10.2
-    # via pytest
 tomli==2.0.0
-    # via coverage
+    # via
+    #   coverage
+    #   pytest
