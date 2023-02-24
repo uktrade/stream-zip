@@ -2,7 +2,7 @@ import setuptools
 
 
 def long_description():
-    with open('README.md', 'r') as file:
+    with open('docs/index.md', 'r') as file:
         return file.read()
 
 
@@ -14,7 +14,8 @@ setuptools.setup(
     description='Python function to construct a ZIP archive with stream processing - without having to store the entire ZIP in memory or disk',
     long_description=long_description(),
     long_description_content_type='text/markdown',
-    url='https://github.com/uktrade/stream-zip',
+    url='https://stream-zip.docs.data.trade.gov.uk/',
+    repository='https://github.com/uktrade/stream-zip',
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
