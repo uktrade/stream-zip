@@ -23,7 +23,7 @@ If you regularly install stream-zip, such as during application deployment, to a
 
 ## ZIP files
 
-A ZIP file is a collection of member files, where each member file has 5 properties.
+Some understanding of ZIP files is needed to use stream-zip. A ZIP file is a collection of member files, where each member file has 5 properties.
 
 1. Name
 2. Modification time
