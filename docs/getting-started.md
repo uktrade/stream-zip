@@ -36,7 +36,7 @@ stream-unzip does not offer defaults for any of these 5 properties.
 
 ## Basic usage
 
-A single function is exposed, `stream_zip`. This function takes an iterable of member files. Each member file must be a tuple of the above 5 properties.
+A single function is exposed, `stream_zip`. This function takes an iterable of member files, and returns an iterable yielding the bytes of the ZIP file. Each member file must be a tuple of the above 5 properties.
 
 ```python
 from datetime import datetime
