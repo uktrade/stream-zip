@@ -3,7 +3,14 @@ title: Getting started
 ---
 
 
+## Prerequisites
+
+Python 3.7+ is supported by stream-zip and must be installed prior to stream-zip.
+
+
 ## Installation
+
+stream-zip can be installed from [PyPI](https://pypi.org/project/stream-zip/) using pip.
 
 ```bash
 pip install stream-zip
