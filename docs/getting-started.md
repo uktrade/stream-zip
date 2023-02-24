@@ -52,10 +52,10 @@ def unzipped_files():
     # ZIP_32 mode
     yield 'my-file-2.txt', modified_at, perms, ZIP_32, file_2_data()
 
-    # No compression for ZIP_32 files
+    # No compression for ZIP_64 files
     yield 'my-file-3.txt', modified_at, perms, NO_COMPRESSION_64, file_3_data()
 
-    # No compression for ZIP_64 files
+    # No compression for ZIP_32 files
     yield 'my-file-4.txt', modified_at, perms, NO_COMPRESSION_32, file_4_data()
 
 for zipped_chunk in stream_zip(unzipped_files()):
