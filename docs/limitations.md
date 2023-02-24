@@ -4,7 +4,7 @@ It's not possible to _completely_ stream-write ZIP files. Small bits of metadata
 
 No compression is supported by two different mechanisms:
 
-- Using `NO_COMPRESSION_*` constants as in the above examples. However in these cases the entire contents of each uncompressed file is buffered in memory, and so should not be used for large files. This is because for raw uncompressed data, where the reader has no way of knowing when it gets to the end, its size and CRC32 must be _before_ it in the ZIP file.
+- Using `NO_COMPRESSION_*` constants as the [full example](getting-started.md#full-example). However in these cases the entire contents of each uncompressed file is buffered in memory, and so should not be used for large files. This is because for raw uncompressed data, where the reader has no way of knowing when it gets to the end, its size and CRC32 must be _before_ it in the ZIP file.
 
 - Using `ZIP_*` constants, but passing `level=0` into a custom zlib compression object. This avoids the buffering into memory that `NO_COMPRESSION_*` will perform, but the output stream would be slightly larger. This is because the data will contain extra bytes every so often so it can indicate its end to the reader.
 
