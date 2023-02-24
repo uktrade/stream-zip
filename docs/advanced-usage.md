@@ -1,7 +1,3 @@
----
-title: Advanced usage
----
-
 ## Custom zlib options
 
 You can customise the compression object by overriding the default `get_compressobj` parameter, which is shown below.

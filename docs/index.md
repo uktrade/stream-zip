@@ -1,8 +1,3 @@
----
-title: Introduction
----
-
-
 # stream-zip
 
 [![PyPI version](https://badge.fury.io/py/stream-zip.svg)](https://pypi.org/project/stream-zip/) [![CircleCI](https://circleci.com/gh/uktrade/stream-zip.svg?style=shield)](https://circleci.com/gh/uktrade/stream-zip) [![Test Coverage](https://api.codeclimate.com/v1/badges/80442ee55a1276e83b44/test_coverage)](https://codeclimate.com/github/uktrade/stream-zip/test_coverage)

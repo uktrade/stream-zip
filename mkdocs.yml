@@ -15,9 +15,9 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.superfences
 nav:
-    - 'index.md'
-    - 'getting-started.md'
-    - 'advanced-usage.md'
-    - 'limitations.md'
-    - 'recipes.md'
-    - 'exceptions.md'
+    - Introduction: 'index.md'
+    - Getting started: 'getting-started.md'
+    - Advanced usage: 'advanced-usage.md'
+    - Limitations: 'limitations.md'
+    - Recipes: 'recipes.md'
+    - Exceptions: 'exceptions.md'
