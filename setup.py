@@ -14,8 +14,10 @@ setuptools.setup(
     description='Python function to construct a ZIP archive with stream processing - without having to store the entire ZIP in memory or disk',
     long_description=long_description(),
     long_description_content_type='text/markdown',
-    url='https://stream-zip.docs.data.trade.gov.uk/',
-    repository='https://github.com/uktrade/stream-zip',
+    project_urls={
+        'Documentation': 'https://stream-zip.docs.data.trade.gov.uk/',
+        'Source': 'https://github.com/uktrade/stream-zip',
+    },
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
