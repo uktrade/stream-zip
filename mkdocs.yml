@@ -14,3 +14,10 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+nav:
+    - 'index.md'
+    - 'getting-started.md'
+    - 'advanced-usage.md'
+    - 'limitations.md'
+    - 'recipes.md'
+    - 'exceptions.md'
