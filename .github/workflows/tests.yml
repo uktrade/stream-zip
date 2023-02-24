@@ -1,0 +1,71 @@
+name: Tests
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Download and save code coverage reporter"
+        run: |
+          mkdir -p ./reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./reporter/cc-test-reporter
+      - uses: actions/upload-artifact@v3
+        with:
+          name: reporter
+          path: ./reporter/cc-test-reporter
+
+  test:
+    name: Test
+    needs: download
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.7"
+          - "3.8"
+          - "3.9"
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v3"
+      - uses: "actions/setup-python@v4"
+        with:
+          python-version: '${{ matrix.python-version }}'
+      - uses: actions/download-artifact@v3
+        with:
+          name: reporter
+          path: ./reporter
+      - name: "Install dependencies"
+        run: |
+          pip install -r requirements-dev.txt
+          chmod +x ./reporter/cc-test-reporter
+      - name: "Notify code climate of pending coverage upload"
+        env:
+          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+        run: |
+          ./reporter/cc-test-reporter before-build
+      - name: "Test"
+        run: |
+          pytest --cov
+          coverage xml
+          ./reporter/cc-test-reporter format-coverage --output ./coverage/${{ matrix.python-version }}.json
+      - uses: actions/upload-artifact@v3
+        with:
+          name: coverage
+          path: ./coverage/*.json
+  upload:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/download-artifact@v3
+      - name: "Upload coverage"
+        env:
+          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+        run: |
+          ls -R
+          chmod +x ./reporter/cc-test-reporter
+          ./reporter/cc-test-reporter sum-coverage ./coverage/*.json -p 3
+          ./reporter/cc-test-reporter upload-coverage
