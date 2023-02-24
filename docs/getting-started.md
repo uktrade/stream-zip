@@ -16,6 +16,10 @@ stream-zip can be installed from [PyPI](https://pypi.org/project/stream-zip/) us
 pip install stream-zip
 ```
 
+This installs the latest version of stream-zip and its dependencies.
+
+To avoid unexpected changes as new versions are released, it is helpful to pin to a specific version. [Poetry](https://python-poetry.org/) or [pip-tools](https://pip-tools.readthedocs.io/en/latest/) are popular tools that can be used for this.
+
 
 ## Usage
 
