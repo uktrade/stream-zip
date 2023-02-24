@@ -2,7 +2,7 @@ import setuptools
 
 
 def long_description():
-    with open('docs/index.md', 'r') as file:
+    with open('README.md', 'r') as file:
         return file.read()
 
 
