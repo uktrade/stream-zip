@@ -1,5 +1,9 @@
 # Exceptions
 
+Exceptions raised by the source iterables are passed through the `stream_zip` function to client code unchanged. Other exceptions are in the `stream_zip` module and derive from `stream_zip.ZipError`.
+
+## Exception hierarchy
+
   - **ZipError**
 
     Base class for all explicitly-thrown exceptions
