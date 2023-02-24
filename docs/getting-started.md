@@ -26,13 +26,18 @@ def unzipped_files():
         yield b'Some bytes 1'
 
     def file_2_data():
+        yield b'Some bytes 1'
         yield b'Some bytes 2'
 
     def file_3_data():
+        yield b'Some bytes 1'
+        yield b'Some bytes 2'
         yield b'Some bytes 3'
+        yield b'Some bytes 4'
 
     def file_4_data():
-        yield b'Some bytes 4'
+        for i in range(5):
+            yield bytes(f'Some bytes {i}', encoding="utf-8")
 
     # ZIP_64 mode
     yield 'my-file-1.txt', modified_at, perms, ZIP_64, file_1_data()
