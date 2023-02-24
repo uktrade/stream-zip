@@ -14,6 +14,8 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+plugins:
+  - material/search
 nav:
     - Introduction: 'index.md'
     - Getting started: 'getting-started.md'
