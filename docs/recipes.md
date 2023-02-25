@@ -30,6 +30,21 @@ zipped_chunks = stream_zip(local_files(names))
 
 ## Output recipes
 
+### Local file
+
+Saving the ZIP to a local file can be done wtih Python's built-in `open` function.
+
+```python
+from datetime import datetime
+from stream_zip import ZIP_32, stream_zip
+
+zipped_chunks = stream_zip(member_files())
+with open('my.zip', 'wb') as f:
+    for chunk in zipped_chunks:
+        f.write(chunk)
+```
+
+
 ### File-like object
 
 If you need to output a file-like object rather than an iterable yielding bytes, you can pass the return value of `stream_zip` through `to_file_like_obj` defined as below.
