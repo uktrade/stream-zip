@@ -54,7 +54,7 @@ for zipped_chunk in zipped_chunks:
 
 ## Generators
 
-In the above example `member_files` is a tuple. However, any iterable that yields tuples be used, for example a generator.
+In the above example `member_files` is a tuple. However, any iterable that yields tuples can be used, for example a generator.
 
 ```python
 from datetime import datetime
@@ -71,7 +71,7 @@ for zipped_chunk in zipped_chunks:
     print(zipped_chunk)
 ```
 
-The iterable of binary chunks of file contents could also be a generator.
+An iterable of binary chunks of file contents could also be a generator.
 
 ```python
 from datetime import datetime
