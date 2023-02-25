@@ -1,8 +1,3 @@
----
-title: Getting started
----
-
-
 ## Prerequisites
 
 Python 3.7+
