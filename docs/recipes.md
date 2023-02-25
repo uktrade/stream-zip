@@ -1,8 +1,34 @@
 # Recipes
 
-stream-zip takes as input one or more member files in a particular structure, and outputs a single ZIP file as an interable that yields bytes. The below recipies convert other types of inputs to the struacture that stream-zip expects, or processes its output to a structure that other code expects.
+stream-zip takes as input one or more member files in a particular structure, and outputs a single ZIP file as an interable that yields bytes. Input recipes convert other types of inputs to the structure that stream-zip expects. Output recipes converts the output of stream-zip to a structure that other code expects.
 
-## Output recipies
+
+## Input recipes
+
+### Named local files
+
+```python
+from datetime import datetime
+from stream_zip import ZIP_32, stream_zip
+
+def local_files(names):
+    now  = datetime.now()
+
+    def contents(name):
+        with open(name, 'rb') as f:
+            while chunk := f.read(65536):
+                yield chunk
+
+    return (
+        (name, now, 0o600, ZIP_32, contents(name))
+        for name in names
+    )
+
+names = ('file-1.txt', 'file-2.txt')
+zipped_chunks = stream_zip(local_files(names))
+```
+
+## Output recipes
 
 ### File-like object
 
