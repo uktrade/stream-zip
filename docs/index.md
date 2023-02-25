@@ -8,3 +8,7 @@ Python function to construct a ZIP archive on the fly - without having to store 
 Offers similar functionality to [zipfly](https://github.com/BuzonIO/zipfly), but with a different API, and does not use Python's zipfile module under the hood. Creates both Zip32/2.0/Legacy and Zip64 files.
 
 To unZIP files on the fly try [stream-unzip](https://github.com/uktrade/stream-unzip).
+
+---
+
+Visit [Getting started](getting-started.md) to get started.
