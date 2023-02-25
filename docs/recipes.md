@@ -1,6 +1,6 @@
 # Recipes
 
-stream-zip takes as input one or more member files in a particular structure, and outputs a single ZIP file as an interable that yields bytes. Input recipes convert other types of inputs to the structure that stream-zip expects. Output recipes converts the output of stream-zip to a structure that other code expects.
+stream-zip takes as input one or more member files as an iterable of tuples, and outputs a single ZIP file as an interable that yields bytes. stream-zip does not ship with code to convert between these and other common structures. However, this page contains recipes that you can take and modify for your case.
 
 
 ## Input recipes
