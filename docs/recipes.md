@@ -1,9 +1,12 @@
 # Recipes
 
+stream-zip takes as input one or more member files in a particular structure, and outputs a single ZIP file as an interable that yields bytes. The below recipies convert other types of inputs to the struacture that stream-zip expects, or processes its output to a structure that other code expects.
 
-## File-like object
+## Output recipies
 
-If you need a file-like object rather than an iterable yielding bytes, you can pass the return value of `stream_zip` through `to_file_like_obj` defined as below.
+### File-like object
+
+If you need to output a file-like object rather than an iterable yielding bytes, you can pass the return value of `stream_zip` through `to_file_like_obj` defined as below.
 
 ```python
 def to_file_like_obj(iterable):
@@ -35,7 +38,7 @@ def to_file_like_obj(iterable):
 ```
 
 
-## Upload to S3
+### Upload to S3
 
 The file-like object above can be used to upload large ZIP files to S3 using [boto3's upload_fileobj](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_fileobj), which splits larger files into multipart uploads.
 
