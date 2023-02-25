@@ -84,3 +84,8 @@ s3.upload_fileobj(
     Config=TransferConfig(multipart_chunksize=1024 * 1024 * 200),
 )
 ```
+
+
+## Submit your own recipes
+
+Pull requests (PRs) that propose changes to this page are especially welcome. PRs can be made at the [source of this page](https://github.com/uktrade/stream-zip/blob/main/docs/recipes.md). Submitting a PR requires a [GitHub account](https://github.com/join) and knowledge of the [GitHub fork and PR process](https://docs.github.com/en/pull-requests).
