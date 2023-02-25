@@ -1,6 +1,6 @@
 # Recipes
 
-stream-zip takes as input one or more member files as an iterable of tuples, and outputs a single ZIP file as an interable that yields bytes. stream-zip does not ship with code to convert between these and other common structures. However, this page contains recipes that you can take and modify for your case.
+stream-zip takes as input one or more member files as an iterable of tuples, and outputs a single ZIP file as an interable that yields bytes. stream-zip does not ship with code to convert between these and other common structures. However, this page contains recipes that do this. You can take these and modify them for your case.
 
 
 ## Input recipes
