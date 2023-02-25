@@ -103,7 +103,7 @@ This is a example of a ZIP showing all supported compression and metadata format
 from datetime import datetime
 from stream_zip import ZIP_64, ZIP_32, NO_COMPRESSION_64, NO_COMPRESSION_32, stream_zip
 
-def unzipped_files():
+def member_files():
     modified_at = datetime.now()
     perms = 0o600
 
@@ -136,6 +136,6 @@ def unzipped_files():
     # No compression for ZIP_32 files
     yield 'my-file-4.txt', modified_at, perms, NO_COMPRESSION_32, file_4_data()
 
-for zipped_chunk in stream_zip(unzipped_files()):
+for zipped_chunk in stream_zip(member_files()):
     print(zipped_chunk)
 ```

@@ -87,7 +87,7 @@ The file-like object above can be used to upload large ZIP files to S3 using [bo
 import boto3
 from boto3.s3.transfer import TransferConfig
 
-zipped_chunks = stream_zip(unzipped_files())
+zipped_chunks = stream_zip(member_files())
 zipped_chunks_obj = to_file_like_obj(zipped_chunks)
 
 s3 = boto3.client('s3')
