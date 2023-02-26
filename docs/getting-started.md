@@ -71,7 +71,7 @@ for zipped_chunk in zipped_chunks:
     print(zipped_chunk)
 ```
 
-An iterable of binary chunks of file contents could also be a generator.
+Each iterable of binary chunks of file contents could be a generator.
 
 ```python
 from datetime import datetime
