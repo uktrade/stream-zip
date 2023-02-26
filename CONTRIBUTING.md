@@ -46,7 +46,7 @@ You should not fork the repository if you're a member of uktrade.
 
 2. [Fork the repository](https://github.com/uktrade/stream-zip/fork). Make a note of the "Owner" that you fork to. This is usually your username.
 
-   There is more documentation on forking in [GitHub's guide on contributing to projects](https://docs.github.com/en/get-started/quickstart/contributing-to-projects).
+    There is more documentation on forking in [GitHub's guide on contributing to projects](https://docs.github.com/en/get-started/quickstart/contributing-to-projects).
 
 3. Clone the forked repository. In the following, replace `my-username` with the owner that you forked to in step 2.
 
