@@ -20,7 +20,7 @@ A feature request can be submitted using the [Ideas category in the stream-zip d
 To contribute changes to documentation or code, you will need the source of stream-unzip locally. The instructions for this depend on if you are a member of the [uktrade GitHub organisation](https://github.com/uktrade). In both cases, experience of working with source code, working on the command line, and working with git is helpful.
 
 
-### If you're a member of the uktrade GitHub organisation
+### If you're a member of uktrade
 
 1. [Setup an SSH key and associate it with your GitHub account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account)
 
@@ -33,7 +33,7 @@ To contribute changes to documentation or code, you will need the source of stre
 
 You should not fork the repository if you're a member of uktrade.
 
-### If you're not a member of the uktrade GitHub organisation
+### If you're not a member of the uktrade
 
 1. [Setup an SSH key and associate it with your GitHub account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account).
 
