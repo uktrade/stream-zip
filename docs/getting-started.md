@@ -20,7 +20,7 @@ If you regularly install stream-zip, such as during application deployment, to a
 
 Some understanding of ZIP files is needed to use stream-zip. A ZIP file is a collection of member files, where each member file has 5 properties.
 
-1. Name
+1. File name
 2. Modification time
 3. Compression and metadata format
 4. Permissions
@@ -39,7 +39,7 @@ from stream_zip import ZIP_32, stream_zip
 
 member_files = (
     (
-        'my-file-1.txt',     # Name
+        'my-file-1.txt',     # File name
         datetime.now(),      # Modification time
         0o600,               # Permissions - owner can read and write
         ZIP_32,              # ZIP_32 has good support but limited to 4GB
