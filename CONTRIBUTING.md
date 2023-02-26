@@ -33,7 +33,7 @@ To contribute changes to documentation or code, you will need the source of stre
 
 You should not fork the repository if you're a member of uktrade.
 
-### If you're not a member of the uktrade
+### If you're not a member of uktrade
 
 1. [Setup an SSH key and associate it with your GitHub account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account).
 
