@@ -108,11 +108,38 @@ In both APPNOTE and the Wikipedia page, the most relevant parts are about the "l
 
 ---
 
-Tests are written using [pytest](https://pytest.org), and at a minimum for each change, existing tests must pass. Once you have the code locally, you can run the tests
+Changes are then submitted via a Pull Request (PR). To do this:
 
-```bash
-pip install -r requirements-dev.txt
-pytest
-```
+1. Decide on a short hyphen-separated descriptive name for your change, prefixed with the type of change. For example `fix/the-bug-description`.
 
-If changing behaviour, in most cases a test should be added or an existing test changed.
+2. Make a branch using this descriptive name.
+
+    ```bash
+    git checkout -b fix-a-bug-description
+    cd stream-zip
+    ```
+
+3. Make sure you can run existing tests locally
+
+    ```bash
+    pip install -r requirements-dev.txt  # Only needed once
+    pytest
+    ```
+
+4. Make your changes in a text editor. In the cases of changing behaviour, this would usually include changing or adding at least one test in [test_stream_zip.py](https://github.com/uktrade/stream-zip/blob/main/test_stream_zip.py), and running them.
+
+    ```bash
+    pytest
+    ```
+
+5. Commit your changes and push to your fork. Ideally the commit message will follow the [Conventional Commit specification](https://www.conventionalcommits.org/).
+
+    ```bash
+    git add stream_zip.py  # Repeat for each file changed
+    git commit -m "feat: the bug description"
+    gir push origin fix/the-bug-description
+    ```
+
+6. Raise a PR at [https://github.com/uktrade/stream-zip/pulls](https://github.com/uktrade/stream-zip/pulls) against the `main` branch in stream-zip.
+
+7. Wait for the PR to be approved and merged, and respond to any questions or suggested changes.
