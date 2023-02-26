@@ -57,7 +57,7 @@ You should not fork the repository if you're a member of uktrade.
 
 ## Contributing documentation
 
-The source of the documentations is in the [docs/](https://github.com/uktrade/stream-zip/tree/main/docs) directory of the source code, and is written using [Material for mkdocs](https://squidfunk.github.io/mkdocs-material/).
+The source of the documentation is in the [docs/](https://github.com/uktrade/stream-zip/tree/main/docs) directory of the source code, and is written using [Material for mkdocs](https://squidfunk.github.io/mkdocs-material/).
 
 Changes are then submitted via a Pull Request (PR). To do this:
 
