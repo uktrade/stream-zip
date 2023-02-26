@@ -32,3 +32,4 @@ nav:
 
   - Contributing:
     - How to contribute: 'contributing.md'
+    - How to make a release: 'making-a-release.md'
