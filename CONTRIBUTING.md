@@ -102,9 +102,9 @@ To contribute most code changes:
 
 - Understanding the low-level properties of the ZIP file format is required. These are covered in detail in the specification of the ZIP file format, known as [APPNOTE](https://support.pkware.com/home/pkzip/developer-tools/appnote).
 
-  APPNOTE can be difficult to read, and contains a lot of information that isn't needed for stream-zip. A more concise introduction is in the [Wikipedia page on the ZIP file format](https://en.wikipedia.org/wiki/ZIP_(file_format)). However the Wikipedia page is less authoritative.
+APPNOTE can be difficult to read, and contains a lot of information that isn't needed for stream-zip. A more concise introduction is in the [Wikipedia page on the ZIP file format](https://en.wikipedia.org/wiki/ZIP_(file_format)). However the Wikipedia page is less authoritative.
 
-  In both APPNOTE and the Wikipedia page, the most relevant parts are about the "local file header" and the "data descriptor". These are sections of metadata that go before and after the contents of each file respectively.
+In both APPNOTE and the Wikipedia page, the most relevant parts are about the "local file header" and the "data descriptor". These are sections of metadata that go before and after the contents of each file respectively.
 
 ---
 
