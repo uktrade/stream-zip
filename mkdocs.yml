@@ -15,6 +15,7 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+  - pymdownx.snippets
 plugins:
   - material/search
 nav:
@@ -24,3 +25,4 @@ nav:
     - Limitations: 'limitations.md'
     - Recipes: 'recipes.md'
     - Exceptions: 'exceptions.md'
+    - Contributing: 'contributing.md'
