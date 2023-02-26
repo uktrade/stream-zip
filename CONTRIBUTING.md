@@ -79,7 +79,7 @@ Changes are then submitted via a Pull Request (PR). To do this:
     mkdocs serve
     ```
 
-5. Commit your change and push to your fork
+5. Commit your change and push to your fork. Ideally the commit message will follow the [Conventional Commit specification](https://www.conventionalcommits.org/).
 
     ```bash
     git add docs/recipies.md  # Repeat for each file changed
