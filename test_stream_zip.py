@@ -1,5 +1,6 @@
 from datetime import datetime
 from io import BytesIO
+import contextlib
 import os
 import subprocess
 from tempfile import TemporaryDirectory
@@ -561,3 +562,49 @@ def test_chunk_sizes():
     sizes = list(get_sizes())
     assert set(sizes[:-1]) == {65536}
     assert sizes[-1] <= 65536
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        ZIP_32,
+        ZIP_64,
+    ],
+)
+def test_bsdcpio(method):
+    assert method in (ZIP_32, ZIP_64)  # Paranoia check that parameterisation works
+
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    perms = 0o600
+    zip_bytes = b''.join(stream_zip((
+        ('file-1', now, perms, method, (b'contents',)),
+    )))
+
+    @contextlib.contextmanager
+    def cwd(new_dir):
+        old_dir = os.getcwd()
+        os.chdir(new_dir)
+        try:
+            yield
+        finally:
+            os.chdir(old_dir)
+
+    def read(path):
+        with open(path, 'rb') as f:
+            return f.read()
+
+    bsdcpio = os.getcwd() + '/libarchive-3.5.3/bsdcpio'
+    with \
+            TemporaryDirectory() as d, \
+            cwd(d), \
+            subprocess.Popen(
+                [bsdcpio, '-i'],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            ) as p:
+
+        a = p.communicate(input=zip_bytes)
+        assert a == (b'', b'1 block\n')
+        assert p.returncode == 0
+        assert read('file-1') == b'contents'

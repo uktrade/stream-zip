@@ -80,6 +80,12 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
 
             _raise_if_beyond(file_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
 
+            extra = zip_64_local_extra_struct.pack(
+                zip_64_extra_signature,
+                16,  # Size of extra
+                0,   # Uncompressed size - since data descriptor
+                0,   # Compressed size - since data descriptor
+            )
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 45,           # Version
@@ -90,9 +96,11 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 0xffffffff,   # Compressed size - since zip64
                 0xffffffff,   # Uncompressed size - since zip64
                 len(name_encoded),
-                0,            # Size of extra
+                len(extra),
             ))
             yield from _(name_encoded)
+            yield from _(extra)
+
             uncompressed_size, compressed_size, crc_32 = yield from _zip_data(
                 chunks,
                 max_uncompressed_size=0xffffffffffffffff,
