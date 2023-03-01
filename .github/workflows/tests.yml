@@ -38,7 +38,10 @@ jobs:
         with:
           name: reporter
           path: ./reporter
-      - name: "Install dependencies"
+      - name: "Install bsdcpio"
+        run: |
+          ./install-libarachive.sh
+      - name: "Install python dependencies"
         run: |
           pip install -r requirements-dev.txt
           chmod +x ./reporter/cc-test-reporter
