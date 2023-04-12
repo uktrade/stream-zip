@@ -12,4 +12,4 @@ To unZIP files on the fly try [stream-unzip](https://github.com/uktrade/stream-u
 
 ---
 
-Visit the [stream-zip documentation](https://stream-zip.docs.data.trade.gov.uk/) for usage instructions.
+Visit the [stream-zip documentation](https://stream-zip.docs.trade.gov.uk/) for usage instructions.

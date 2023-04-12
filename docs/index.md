@@ -1,6 +1,6 @@
 --8<-- "README.md:intro"
 
-To unZIP files on the fly try [stream-unzip](https://stream-unzip.docs.data.trade.gov.uk/).
+To unZIP files on the fly try [stream-unzip](https://stream-unzip.docs.trade.gov.uk/).
 
 ---
 
