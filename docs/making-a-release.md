@@ -38,4 +38,4 @@ These instructions are concise, and assume you have a good working knowledge of 
 
     The "Generate release notes" feature should be used, but the results amended as appropriate.
 
-    The GitHub releases feature is primarily used to show the latest version in the top right of the documentation at [https://stream-zip.docs.data.trade.gov.uk/](https://stream-zip.docs.data.trade.gov.uk/).
+    The GitHub releases feature is primarily used to show the latest version in the top right of the documentation at [https://stream-zip.docs.trade.gov.uk/](https://stream-zip.docs.trade.gov.uk/).
