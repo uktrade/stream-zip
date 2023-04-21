@@ -45,7 +45,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
         data_descriptor_zip_32_struct = Struct('<III')
 
         central_directory_header_signature = b'PK\x01\x02'
-        central_directory_header_struct = Struct('<HH2sH4sIIIHHHHHII')
+        central_directory_header_struct = Struct('<BBBB2sH4sIIIHHHHHII')
 
         zip_64_end_of_central_directory_signature = b'PK\x06\x06'
         zip_64_end_of_central_directory_struct = Struct('<QHHIIQQQQ')
@@ -119,7 +119,9 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             )
             return central_directory_header_struct.pack(
                 45,           # Version made by
+                3,            # System made by (UNIX)
                 45,           # Version required
+                0,            # Reserved
                 b'\x08\x08',  # Flags - data descriptor and utf-8 file names
                 8,            # Compression - deflate
                 mod_at_encoded,
@@ -166,7 +168,9 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             extra = b''
             return central_directory_header_struct.pack(
                 20,           # Version made by
+                3,            # System made by (UNIX)
                 20,           # Version required
+                0,            # Reserved
                 b'\x08\x08',  # Flags - data descriptor and utf-8 file names
                 8,            # Compression - deflate
                 mod_at_encoded,
@@ -249,7 +253,9 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             )
             return central_directory_header_struct.pack(
                45,           # Version made by
+               3,            # System made by (UNIX)
                45,           # Version required
+               0,            # Reserved
                b'\x00\x08',  # Flags - utf-8 file names
                0,            # Compression - none
                mod_at_encoded,
@@ -294,7 +300,9 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
 
             return central_directory_header_struct.pack(
                20,           # Version made by
+               3,            # System made by (UNIX)
                20,           # Version required
+               0,            # Reserved
                b'\x00\x08',  # Flags - utf-8 file names
                0,            # Compression - none
                mod_at_encoded,
