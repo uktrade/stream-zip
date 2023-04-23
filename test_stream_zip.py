@@ -2,6 +2,7 @@ from datetime import datetime
 from io import BytesIO
 import contextlib
 import os
+import stat
 import subprocess
 from tempfile import TemporaryDirectory
 from zipfile import ZipFile
@@ -609,3 +610,32 @@ def test_bsdcpio(method):
         assert a == (b'', b'1 block\n')
         assert p.returncode == 0
         assert read('file-1') == b'contents'
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        ZIP_32,
+        ZIP_64,
+    ],
+)
+def test_7z_symbolic_link(method):
+    modified_at = datetime.now()
+    member_files = (
+        ('my-file-1.txt', modified_at, 0o600, ZIP_64, (b'Some bytes 1',)),
+        ('my-link.txt', modified_at, stat.S_IFLNK | 0o600, ZIP_64, (b'my-file-1.txt',)),
+    )
+    zipped_chunks = stream_zip(member_files)
+
+    with \
+            TemporaryDirectory() as d, \
+            cwd(d): \
+
+        with open('test.zip', 'wb') as fp:
+            for zipped_chunk in zipped_chunks:
+                fp.write(zipped_chunk)
+
+        subprocess.run(['7z', 'e', 'test.zip'])
+
+        with open('my-link.txt') as f:
+            assert f.read() == 'Some bytes 1'
