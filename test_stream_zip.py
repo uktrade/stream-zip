@@ -24,6 +24,16 @@ from stream_zip import (
 )
 
 
+@contextlib.contextmanager
+def cwd(new_dir):
+    old_dir = os.getcwd()
+    os.chdir(new_dir)
+    try:
+        yield
+    finally:
+        os.chdir(old_dir)
+
+
 def test_with_stream_unzip_zip_64():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
@@ -579,15 +589,6 @@ def test_bsdcpio(method):
     zip_bytes = b''.join(stream_zip((
         ('file-1', now, perms, method, (b'contents',)),
     )))
-
-    @contextlib.contextmanager
-    def cwd(new_dir):
-        old_dir = os.getcwd()
-        os.chdir(new_dir)
-        try:
-            yield
-        finally:
-            os.chdir(old_dir)
 
     def read(path):
         with open(path, 'rb') as f:
