@@ -35,6 +35,28 @@ def cwd(new_dir):
         os.chdir(old_dir)
 
 
+
+def consume_stream(streamed_zip):
+    """
+    Helper - consumes generators in a streamed zip.
+    Returns the total length of the zip file.
+    """
+    return sum((len(chunk) for chunk in streamed_zip), 0)
+
+
+def consume_stream_unzip(streamed_zip) -> int:
+    """
+    Helper - consumes generators in a streamed zip, passing through stream_unzip to
+    ensure the stream is valid.
+    Returns the total length of the zip file.
+    """
+    num_received = 0
+    for name, size, chunks in stream_unzip(streamed_zip):
+        for chunk in chunks:
+            num_received += len(chunk)
+    return num_received
+
+
 def test_with_stream_unzip_zip_64():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
@@ -103,11 +125,7 @@ def test_with_stream_unzip_large_easily_compressible():
 
         yield 'file-1', now, perms, ZIP_64, data()
 
-    num_received = 0
-    for name, size, chunks in stream_unzip(stream_zip(files())):
-        for chunk in chunks:
-            num_received += len(chunk)
-
+    num_received = consume_stream_unzip(stream_zip(files()))
     assert num_received == 5000000000
 
 
@@ -124,11 +142,7 @@ def test_with_stream_unzip_large_not_easily_compressible_with_no_compression_64(
         yield 'file-1', now, perms, ZIP_64, data()
         yield 'file-2', now, perms, NO_COMPRESSION_64, (b'-',)
 
-    num_received = 0
-    for name, size, chunks in stream_unzip(stream_zip(files())):
-        for chunk in chunks:
-            num_received += len(chunk)
-
+    num_received = consume_stream_unzip(stream_zip(files()))
     assert num_received == 5000000001
 
 
@@ -146,9 +160,31 @@ def test_with_stream_unzip_large_not_easily_compressible_with_no_compression_32(
         yield 'file-2', now, perms, NO_COMPRESSION_32, (b'-',)
 
     with pytest.raises(OffsetOverflowError):
-        for name, size, chunks in stream_unzip(stream_zip(files())):
-            for chunk in chunks:
-                pass
+        consume_stream(stream_zip(files()))
+
+
+def test_zip32_file_after_long_offset_upgraded_to_zip64():
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    perms = 0o600
+    batch = b'0' * 500000
+
+    def files():
+        def data():
+            for i in range(0, 10000):
+                yield batch
+
+        # write 5GB of data
+        yield 'file-1', now, perms, NO_COMPRESSION_64, data()
+        # now file offset is >4GiB, so writing the next file as ZIP32 would fail.
+        yield 'file-2', now, perms, NO_COMPRESSION_32, (b'-',)
+
+    # Using allow_upgrade_to_64=True automatically upgrades the file to be written as ZIP64
+    # due to the file offset being too large.
+    consume_stream_unzip(stream_zip(files(), allow_upgrade_to_64=True))
+
+    # Doing the same with it set to False (default) causes an overflow error instead:
+    with pytest.raises(OffsetOverflowError):
+        consume_stream(stream_zip(files(), allow_upgrade_to_64=False))
 
 
 def test_with_stream_unzip_large_not_easily_compressible_with_zip_32():
@@ -165,9 +201,7 @@ def test_with_stream_unzip_large_not_easily_compressible_with_zip_32():
         yield 'file-2', now, perms, ZIP_32, (b'-',)  # Needs a ZIP_64 offset, but is in ZIP_32 mode
 
     with pytest.raises(OffsetOverflowError):
-        for name, size, chunks in stream_unzip(stream_zip(files())):
-            for chunk in chunks:
-                pass
+        consume_stream(stream_zip(files()))
 
 
 def test_zip_overflow_large_not_easily_compressible():
@@ -183,8 +217,7 @@ def test_zip_overflow_large_not_easily_compressible():
         yield 'file-1', now, perms, ZIP_32, data()
 
     with pytest.raises(CompressedSizeOverflowError):
-        for chunk in stream_zip(files()):
-            pass
+        consume_stream(stream_zip(files()))
 
 
 def test_zip_overflow_large_easily_compressible():

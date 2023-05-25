@@ -2,12 +2,16 @@ from collections import deque
 from struct import Struct
 import zlib
 
-NO_COMPRESSION_32 = object()
-NO_COMPRESSION_64 = object()
-ZIP_32 = object()
-ZIP_64 = object()
+ZIP_32 = 0b00
+ZIP_64 = 0b01
+NO_COMPRESSION = 0b10
+NO_COMPRESSION_32 = NO_COMPRESSION | ZIP_32
+NO_COMPRESSION_64 = NO_COMPRESSION | ZIP_64
 
-def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj(wbits=-zlib.MAX_WBITS, level=9)):
+_MAX_ZIP32_FILE_OFFSET = 0xffffffff
+
+
+def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj(wbits=-zlib.MAX_WBITS, level=9), allow_upgrade_to_64=False):
 
     def evenly_sized(chunks):
         chunk = b''
@@ -140,7 +144,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
         def _zip_32_local_header_and_data(name_encoded, mod_at_encoded, external_attr, chunks):
             file_offset = offset
 
-            _raise_if_beyond(file_offset, maximum=0xffffffff, exception_class=OffsetOverflowError)
+            _raise_if_beyond(file_offset, maximum=_MAX_ZIP32_FILE_OFFSET, exception_class=OffsetOverflowError)
 
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
@@ -275,7 +279,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
         def _no_compression_32_local_header_and_data(name_encoded, mod_at_encoded, external_attr, chunks):
             file_offset = offset
 
-            _raise_if_beyond(file_offset, maximum=0xffffffff, exception_class=OffsetOverflowError)
+            _raise_if_beyond(file_offset, maximum=_MAX_ZIP32_FILE_OFFSET, exception_class=OffsetOverflowError)
 
             chunks, size, crc_32 = _no_compression_buffered_data_size_crc_32(chunks, maximum_size=0xffffffff)
 
@@ -338,8 +342,6 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             return chunks, size, crc_32
 
         for name, modified_at, perms, method, chunks in files:
-            zip_64_central_directory = zip_64_central_directory or method in (ZIP_64, NO_COMPRESSION_64)
-
             name_encoded = name.encode('utf-8')
             _raise_if_beyond(len(name_encoded), maximum=0xffff, exception_class=NameLengthOverflowError)
 
@@ -355,6 +357,12 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 (perms << 16) | \
                 (0x10 if name_encoded[-1:] == b'/' else 0x0)  # MS-DOS directory
 
+            if allow_upgrade_to_64 and offset > _MAX_ZIP32_FILE_OFFSET:
+                # Force zip64 for this file - we can't write files with this offset in zip32
+                method |= ZIP_64
+            
+            zip_64_central_directory = zip_64_central_directory or method & ZIP_64
+            
             data_func = \
                 _zip_64_local_header_and_data if method is ZIP_64 else \
                 _zip_32_local_header_and_data if method is ZIP_32 else \
