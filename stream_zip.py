@@ -9,6 +9,7 @@ NO_COMPRESSION_32 = NO_COMPRESSION | ZIP_32
 NO_COMPRESSION_64 = NO_COMPRESSION | ZIP_64
 
 _MAX_ZIP32_FILE_OFFSET = 0xffffffff
+_MAX_ZIP64_FILE_OFFSET = 0xffffffffffffffff
 
 
 def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj(wbits=-zlib.MAX_WBITS, level=9), allow_upgrade_to_64=False):
@@ -220,9 +221,9 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
         def _no_compression_64_local_header_and_data(name_encoded, mod_at_encoded, external_attr, chunks):
             file_offset = offset
 
-            _raise_if_beyond(file_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
+            _raise_if_beyond(file_offset, maximum=_MAX_ZIP64_FILE_OFFSET, exception_class=OffsetOverflowError)
 
-            chunks, size, crc_32 = _no_compression_buffered_data_size_crc_32(chunks, maximum_size=0xffffffffffffffff)
+            chunks, size, crc_32 = _no_compression_buffered_data_size_crc_32(chunks, maximum_size=_MAX_ZIP64_FILE_OFFSET)
 
             extra = zip_64_local_extra_struct.pack(
                 zip_64_extra_signature,
@@ -361,6 +362,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 # Force zip64 for this file - we can't write files with this offset in zip32
                 method |= ZIP_64
             
+            
             zip_64_central_directory = zip_64_central_directory or method & ZIP_64
             
             data_func = \
@@ -370,13 +372,18 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 _no_compression_32_local_header_and_data
             central_directory.append((yield from data_func(name_encoded, mod_at_encoded, external_attr, evenly_sized(chunks))))
 
-        max_central_directory_length, max_central_directory_start_offset, max_central_directory_size = \
-            (0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff) if zip_64_central_directory else \
-            (0xffff, 0xffffffff, 0xffffffff)
-
         central_directory_start_offset = offset
+        if allow_upgrade_to_64 and central_directory_start_offset > _MAX_ZIP32_FILE_OFFSET:
+            # Even if all files written are zip32, we need to write a zip64 central directory if the total offset is >4GiB
+            zip_64_central_directory = True
+            
+        max_central_directory_length, max_central_directory_start_offset, max_central_directory_size = \
+            (_MAX_ZIP64_FILE_OFFSET, _MAX_ZIP64_FILE_OFFSET, _MAX_ZIP64_FILE_OFFSET) if zip_64_central_directory else \
+            (0xffff, _MAX_ZIP32_FILE_OFFSET, _MAX_ZIP32_FILE_OFFSET)
+
         central_directory_end_offset = offset
         central_directory_size = central_directory_end_offset - central_directory_start_offset
+        
         _raise_if_beyond(central_directory_start_offset, maximum=max_central_directory_start_offset, exception_class=OffsetOverflowError)
         _raise_if_beyond(len(central_directory), maximum=max_central_directory_length, exception_class=CentralDirectoryNumberOfEntriesOverflowError)
 
@@ -389,8 +396,14 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             central_directory_end_offset = offset
             central_directory_size = central_directory_end_offset - central_directory_start_offset
 
-            _raise_if_beyond(central_directory_end_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
-            _raise_if_beyond(central_directory_size, maximum=max_central_directory_size, exception_class=CentralDirectorySizeOverflowError)
+        zip_64_end_of_central_directory = zip_64_central_directory
+        if allow_upgrade_to_64 and central_directory_end_offset > _MAX_ZIP32_FILE_OFFSET:
+            # Even if the all files written are zip32 and the central directory is zip32, we need to write a zip64 EOCD record if the total offset now is >4GiB
+            zip_64_end_of_central_directory = True
+
+        max_central_directory_end_offset = _MAX_ZIP64_FILE_OFFSET if zip_64_end_of_central_directory else _MAX_ZIP32_FILE_OFFSET
+        _raise_if_beyond(central_directory_size, maximum=max_central_directory_size, exception_class=CentralDirectorySizeOverflowError)
+        _raise_if_beyond(central_directory_end_offset, maximum=max_central_directory_end_offset, exception_class=OffsetOverflowError)
 
         if zip_64_central_directory:
             yield from _(zip_64_end_of_central_directory_signature)

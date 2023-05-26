@@ -1,6 +1,7 @@
 from datetime import datetime
 from io import BytesIO
 import contextlib
+import itertools
 import os
 import stat
 import subprocess
@@ -127,6 +128,56 @@ def test_with_stream_unzip_large_easily_compressible():
 
     num_received = consume_stream_unzip(stream_zip(files()))
     assert num_received == 5000000000
+
+
+def test_zip64_central_directory_after_only_zip32_files():
+    now = datetime.fromisoformat("2021-01-01 21:01:12")
+    perms = 0o600
+
+    def files():
+        for i in range(4):
+            # 1.1GB of data per file
+            data = itertools.repeat(b"0" * 1000000, 1100)
+            yield f"file-{i}", now, perms, NO_COMPRESSION_32, data
+
+        # now file offset is >4GiB, but so far no overflow has been thrown.
+        return
+
+    # Using allow_upgrade_to_64=False (default) throws an overflow error *after* writing all the files, because
+    # the zip32 central directory can't be written.
+    with pytest.raises(OffsetOverflowError):
+        consume_stream(stream_zip(files()))
+
+    # Doing the same with it set to True just generates a zip64 header instead.
+    consume_stream_unzip(stream_zip(files(), allow_upgrade_to_64=True))
+
+
+def test_zip64_end_of_central_directory_after_zip32_central_directory():
+    now = datetime.fromisoformat("2021-01-01 21:01:12")
+    perms = 0o600
+
+    def files():
+        def data():
+            somebytes = b"0" * 429496
+            yield from itertools.repeat(somebytes, 10000)
+            # there's 7295 bytes remaining until we hit 4GiB, use up almost all of them
+            yield b"0" * 7290
+
+        yield "file-1", now, perms, NO_COMPRESSION_32, data()
+
+        # here, file offset is still JUST <4GiB, but writing the central directory will put it over the limit.
+        # To be clear, writing the zip32 central directory *works fine* - but the *end* of central directory record
+        # cannot be written, since it must contain a 32-bit pointer to an offset over 4GiB.
+        return
+
+    # Using allow_upgrade_to_64=False (default) throws an overflow error *after* writing all the files, because
+    # the zip32 end of central directory record can't be written.
+    with pytest.raises(OffsetOverflowError):
+        consume_stream(stream_zip(files()))
+
+    # Doing the same with it set to True just generates a zip64 end of central directory header instead.
+    consume_stream_unzip(stream_zip(files(), allow_upgrade_to_64=True))
+
 
 
 def test_with_stream_unzip_large_not_easily_compressible_with_no_compression_64():
