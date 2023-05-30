@@ -101,7 +101,7 @@ This is a example of a ZIP showing all supported compression and metadata format
 
 ```python
 from datetime import datetime
-from stream_zip import ZIP_64, ZIP_32, NO_COMPRESSION_64, NO_COMPRESSION_32, stream_zip
+from stream_zip import ZIP_AUTO, ZIP_64, ZIP_32, NO_COMPRESSION_64, NO_COMPRESSION_32, stream_zip
 
 def member_files():
     modified_at = datetime.now()
@@ -111,30 +111,37 @@ def member_files():
         yield b'Some bytes 1'
 
     def file_2_data():
-        yield b'Some bytes 1'
         yield b'Some bytes 2'
 
     def file_3_data():
-        yield b'Some bytes 1'
         yield b'Some bytes 2'
         yield b'Some bytes 3'
-        yield b'Some bytes 4'
 
     def file_4_data():
+        yield b'Some bytes 4'
+        yield b'Some bytes 5'
+        yield b'Some bytes 6'
+        yield b'Some bytes 7'
+
+    def file_5_data():
         for i in range(5):
             yield bytes(f'Some bytes {i}', encoding="utf-8")
 
     # ZIP_64 mode
-    yield 'my-file-1.txt', modified_at, perms, ZIP_64, file_1_data()
+    yield 'my-file-1.txt', modified_at, perms, ZIP_64, file_2_data()
 
     # ZIP_32 mode
-    yield 'my-file-2.txt', modified_at, perms, ZIP_32, file_2_data()
+    yield 'my-file-2.txt', modified_at, perms, ZIP_32, file_3_data()
+
+    # ZIP_AUTO to choose between ZIP_32 and ZIP_64 automatically based on
+    # the uncompressed size of data
+    yield 'my-file-3.txt', modified_at, perms, ZIP_AUTO(uncompressed_size=12), file_1_data()
 
     # No compression for ZIP_64 files
-    yield 'my-file-3.txt', modified_at, perms, NO_COMPRESSION_64, file_3_data()
+    yield 'my-file-4.txt', modified_at, perms, NO_COMPRESSION_64, file_4_data()
 
     # No compression for ZIP_32 files
-    yield 'my-file-4.txt', modified_at, perms, NO_COMPRESSION_32, file_4_data()
+    yield 'my-file-5.txt', modified_at, perms, NO_COMPRESSION_32, file_5_data()
 
 for zipped_chunk in stream_zip(member_files()):
     print(zipped_chunk)
