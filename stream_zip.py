@@ -7,10 +7,17 @@ _NO_COMPRESSION_64 = object()
 _ZIP_32 = object()
 _ZIP_64 = object()
 
-NO_COMPRESSION_32 = _NO_COMPRESSION_32
-NO_COMPRESSION_64 = _NO_COMPRESSION_64
-ZIP_32 = _ZIP_32
-ZIP_64 = _ZIP_64
+def NO_COMPRESSION_32(offset, default_get_compressobj):
+    return _NO_COMPRESSION_32, default_get_compressobj
+
+def NO_COMPRESSION_64(offset, default_get_compressobj):
+    return _NO_COMPRESSION_64, default_get_compressobj
+
+def ZIP_32(offset, default_get_compressobj):
+    return _ZIP_32, default_get_compressobj
+
+def ZIP_64(offset, default_get_compressobj):
+    return _ZIP_64, default_get_compressobj
 
 
 def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj(wbits=-zlib.MAX_WBITS, level=9)):
@@ -81,7 +88,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             if offset > maximum:
                 raise exception_class()
 
-        def _zip_64_local_header_and_data(name_encoded, mod_at_encoded, external_attr, chunks):
+        def _zip_64_local_header_and_data(name_encoded, mod_at_encoded, external_attr, _get_compress_obj, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
@@ -109,6 +116,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
 
             uncompressed_size, compressed_size, crc_32 = yield from _zip_data(
                 chunks,
+                _get_compress_obj,
                 max_uncompressed_size=0xffffffffffffffff,
                 max_compressed_size=0xffffffffffffffff,
             )
@@ -143,7 +151,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 0xffffffff,   # Offset of local header - since zip64
             ), name_encoded, extra
 
-        def _zip_32_local_header_and_data(name_encoded, mod_at_encoded, external_attr, chunks):
+        def _zip_32_local_header_and_data(name_encoded, mod_at_encoded, external_attr, _get_compress_obj, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffff, exception_class=OffsetOverflowError)
@@ -164,6 +172,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
 
             uncompressed_size, compressed_size, crc_32 = yield from _zip_data(
                 chunks,
+                _get_compress_obj,
                 max_uncompressed_size=0xffffffff,
                 max_compressed_size=0xffffffff,
             )
@@ -192,11 +201,11 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 file_offset,
             ), name_encoded, extra
 
-        def _zip_data(chunks, max_uncompressed_size, max_compressed_size):
+        def _zip_data(chunks, _get_compress_obj, max_uncompressed_size, max_compressed_size):
             uncompressed_size = 0
             compressed_size = 0
             crc_32 = zlib.crc32(b'')
-            compress_obj = get_compressobj()
+            compress_obj = _get_compress_obj()
             for chunk in chunks:
                 uncompressed_size += len(chunk)
 
@@ -219,7 +228,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
 
             return uncompressed_size, compressed_size, crc_32
 
-        def _no_compression_64_local_header_and_data(name_encoded, mod_at_encoded, external_attr, chunks):
+        def _no_compression_64_local_header_and_data(name_encoded, mod_at_encoded, external_attr, _get_compress_obj, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
@@ -278,7 +287,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             ), name_encoded, extra
 
 
-        def _no_compression_32_local_header_and_data(name_encoded, mod_at_encoded, external_attr, chunks):
+        def _no_compression_32_local_header_and_data(name_encoded, mod_at_encoded, external_attr, _get_compress_obj, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffff, exception_class=OffsetOverflowError)
@@ -344,7 +353,9 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             return chunks, size, crc_32
 
         for name, modified_at, perms, method, chunks in files:
-            zip_64_central_directory = zip_64_central_directory or method in (_ZIP_64, _NO_COMPRESSION_64)
+            _method, _get_compress_obj = method(offset, get_compressobj)
+
+            zip_64_central_directory = zip_64_central_directory or _method in (_ZIP_64, _NO_COMPRESSION_64)
 
             name_encoded = name.encode('utf-8')
             _raise_if_beyond(len(name_encoded), maximum=0xffff, exception_class=NameLengthOverflowError)
@@ -362,11 +373,11 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 (0x10 if name_encoded[-1:] == b'/' else 0x0)  # MS-DOS directory
 
             data_func = \
-                _zip_64_local_header_and_data if method is _ZIP_64 else \
-                _zip_32_local_header_and_data if method is _ZIP_32 else \
-                _no_compression_64_local_header_and_data if method is _NO_COMPRESSION_64 else \
+                _zip_64_local_header_and_data if _method is _ZIP_64 else \
+                _zip_32_local_header_and_data if _method is _ZIP_32 else \
+                _no_compression_64_local_header_and_data if _method is _NO_COMPRESSION_64 else \
                 _no_compression_32_local_header_and_data
-            central_directory.append((yield from data_func(name_encoded, mod_at_encoded, external_attr, evenly_sized(chunks))))
+            central_directory.append((yield from data_func(name_encoded, mod_at_encoded, external_attr, _get_compress_obj, evenly_sized(chunks))))
 
         max_central_directory_length, max_central_directory_start_offset, max_central_directory_size = \
             (0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff) if zip_64_central_directory else \
