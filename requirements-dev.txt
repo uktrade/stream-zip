@@ -32,7 +32,7 @@ pytest-cov==3.0.0
     # via -r requirements-dev.in
 stream-inflate==0.0.14
     # via stream-unzip
-stream-unzip==0.0.68
+stream-unzip==0.0.86
     # via -r requirements-dev.in
 tomli==2.0.0
     # via
