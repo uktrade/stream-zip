@@ -2,10 +2,16 @@ from collections import deque
 from struct import Struct
 import zlib
 
-NO_COMPRESSION_32 = object()
-NO_COMPRESSION_64 = object()
-ZIP_32 = object()
-ZIP_64 = object()
+_NO_COMPRESSION_32 = object()
+_NO_COMPRESSION_64 = object()
+_ZIP_32 = object()
+_ZIP_64 = object()
+
+NO_COMPRESSION_32 = _NO_COMPRESSION_32
+NO_COMPRESSION_64 = _NO_COMPRESSION_64
+ZIP_32 = _ZIP_32
+ZIP_64 = _ZIP_64
+
 
 def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj(wbits=-zlib.MAX_WBITS, level=9)):
 
@@ -338,7 +344,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             return chunks, size, crc_32
 
         for name, modified_at, perms, method, chunks in files:
-            zip_64_central_directory = zip_64_central_directory or method in (ZIP_64, NO_COMPRESSION_64)
+            zip_64_central_directory = zip_64_central_directory or method in (_ZIP_64, _NO_COMPRESSION_64)
 
             name_encoded = name.encode('utf-8')
             _raise_if_beyond(len(name_encoded), maximum=0xffff, exception_class=NameLengthOverflowError)
@@ -356,9 +362,9 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 (0x10 if name_encoded[-1:] == b'/' else 0x0)  # MS-DOS directory
 
             data_func = \
-                _zip_64_local_header_and_data if method is ZIP_64 else \
-                _zip_32_local_header_and_data if method is ZIP_32 else \
-                _no_compression_64_local_header_and_data if method is NO_COMPRESSION_64 else \
+                _zip_64_local_header_and_data if method is _ZIP_64 else \
+                _zip_32_local_header_and_data if method is _ZIP_32 else \
+                _no_compression_64_local_header_and_data if method is _NO_COMPRESSION_64 else \
                 _no_compression_32_local_header_and_data
             central_directory.append((yield from data_func(name_encoded, mod_at_encoded, external_attr, evenly_sized(chunks))))
 
