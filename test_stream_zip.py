@@ -59,7 +59,7 @@ def test_with_stream_unzip_zip_32():
 
     assert [(b'file-1', None, b'a' * 10000 + b'b' * 10000), (b'file-2', None, b'cd')] == [
         (name, size, b''.join(chunks))
-        for name, size, chunks in stream_unzip(stream_zip(files()))
+        for name, size, chunks in stream_unzip(stream_zip(files()), allow_zip64=False)
     ]
 
 
