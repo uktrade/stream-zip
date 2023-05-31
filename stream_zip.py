@@ -355,8 +355,6 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
         for name, modified_at, perms, method, chunks in files:
             _method, _get_compress_obj = method(offset, get_compressobj)
 
-            zip_64_central_directory = zip_64_central_directory or _method in (_ZIP_64, _NO_COMPRESSION_64)
-
             name_encoded = name.encode('utf-8')
             _raise_if_beyond(len(name_encoded), maximum=0xffff, exception_class=NameLengthOverflowError)
 
@@ -378,6 +376,8 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 _no_compression_64_local_header_and_data if _method is _NO_COMPRESSION_64 else \
                 _no_compression_32_local_header_and_data
             central_directory.append((yield from data_func(name_encoded, mod_at_encoded, external_attr, _get_compress_obj, evenly_sized(chunks))))
+
+            zip_64_central_directory = zip_64_central_directory or _method in (_ZIP_64, _NO_COMPRESSION_64)
 
         max_central_directory_length, max_central_directory_start_offset, max_central_directory_size = \
             (0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff) if zip_64_central_directory else \
