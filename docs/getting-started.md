@@ -42,7 +42,7 @@ member_files = (
         'my-file-1.txt',     # File name
         datetime.now(),      # Modification time
         0o600,               # Permissions - owner can read and write
-        ZIP_32,              # ZIP_32 has good support but limited to 4GB
+        ZIP_32,              # ZIP_32 has good support but limited to 4GiB
         (b'Some bytes 1',),  # Iterable of chunks of contents
     ),
 )
