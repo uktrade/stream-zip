@@ -8,12 +8,13 @@ from tempfile import TemporaryDirectory
 from zipfile import ZipFile
 
 import pytest
-from stream_unzip import stream_unzip
+from stream_unzip import UnsupportedZip64Error, stream_unzip
 
 from stream_zip import (
     stream_zip,
     NO_COMPRESSION_64,
     NO_COMPRESSION_32,
+    ZIP_AUTO,
     ZIP_64,
     ZIP_32,
     CompressedSizeOverflowError,
@@ -33,6 +34,14 @@ def cwd(new_dir):
         yield
     finally:
         os.chdir(old_dir)
+
+
+def gen_bytes(num):
+    chunk = b'-' * 100000
+    while num:
+        to_yield = min(len(chunk), num)
+        num -= to_yield
+        yield chunk[:to_yield]
 
 
 def test_with_stream_unzip_zip_64():
@@ -59,7 +68,7 @@ def test_with_stream_unzip_zip_32():
 
     assert [(b'file-1', None, b'a' * 10000 + b'b' * 10000), (b'file-2', None, b'cd')] == [
         (name, size, b''.join(chunks))
-        for name, size, chunks in stream_unzip(stream_zip(files()))
+        for name, size, chunks in stream_unzip(stream_zip(files()), allow_zip64=False)
     ]
 
 
@@ -89,6 +98,95 @@ def test_with_stream_unzip_with_no_compresion_32():
         (name, size, b''.join(chunks))
         for name, size, chunks in stream_unzip(stream_zip(files()))
     ]
+
+
+def test_with_stream_unzip_auto_small():
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    perms = 0o600
+
+    def files():
+        yield 'file-1', now, perms, ZIP_AUTO(20000), (b'a' * 10000, b'b' * 10000)
+        yield 'file-2', now, perms, ZIP_AUTO(2), (b'c', b'd')
+
+    assert [(b'file-1', None, b'a' * 10000 + b'b' * 10000), (b'file-2', None, b'cd')] == [
+        (name, size, b''.join(chunks))
+        for name, size, chunks in stream_unzip(stream_zip(files()), allow_zip64=False)
+    ]
+
+
+@pytest.mark.parametrize(
+    "level",
+    [
+        0,
+        9,
+    ],
+)
+def test_with_stream_unzip_at_zip_32_limit(level):
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    perms = 0o600
+
+    def files():
+        yield 'file-1', now, perms, ZIP_AUTO(4293656841, level=level), gen_bytes(4293656841)
+
+    assert [(b'file-1', None, 4293656841)] == [
+        (name, size, sum(len(chunk) for chunk in chunks))
+        for name, size, chunks in stream_unzip(stream_zip(files()), allow_zip64=False)
+    ]
+
+
+@pytest.mark.parametrize(
+    "level",
+    [
+        0,
+        9,
+    ],
+)
+def test_with_stream_unzip_above_zip_32_size_limit(level):
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    perms = 0o600
+
+    def files():
+        yield 'file-1', now, perms, ZIP_AUTO(4293656842, level=level), gen_bytes(4293656842)
+
+    assert [(b'file-1', None, 4293656842)] == [
+        (name, size, sum(len(chunk) for chunk in chunks))
+        for name, size, chunks in stream_unzip(stream_zip(files()))
+    ]
+
+    with pytest.raises(UnsupportedZip64Error):
+        next(iter(stream_unzip(stream_zip(files()), allow_zip64=False)))
+
+
+def test_with_stream_unzip_above_zip_32_offset_limit():
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    perms = 0o600
+
+    def files():
+        yield 'file-1', now, perms, ZIP_AUTO(4000000000, level=0), gen_bytes(4000000000)
+        yield 'file-2', now, perms, ZIP_AUTO(4000000000, level=0), gen_bytes(4000000000)
+        yield 'file-3', now, perms, ZIP_AUTO(1, level=0), gen_bytes(1)
+
+    assert [(b'file-1', None, 4000000000), (b'file-2', None, 4000000000), (b'file-3', None, 1)] == [
+        (name, size, sum(len(chunk) for chunk in chunks))
+        for name, size, chunks in stream_unzip(stream_zip(files()))
+    ]
+
+    file_1_zip_32 = False
+    file_2_zip_32 = False
+    with pytest.raises(UnsupportedZip64Error):
+        it = iter(stream_unzip(stream_zip(files()), allow_zip64=False))
+        name, size, chunks = next(it)
+        for c in chunks:
+            pass
+        file_1_zip_32 = True
+        name, size, chunks = next(it)
+        for c in chunks:
+            pass
+        file_2_zip_32 = True
+        name, size, chunks = next(it)
+
+    assert file_1_zip_32
+    assert file_2_zip_32
 
 
 def test_with_stream_unzip_large_easily_compressible():
