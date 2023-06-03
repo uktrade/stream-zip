@@ -22,8 +22,8 @@ Some understanding of ZIP files is needed to use stream-zip. A ZIP file is a col
 
 1. File name
 2. Modification time
-3. Compression and metadata format
-4. Permissions
+3. Permissions
+4. Compression and metadata format
 5. Binary contents
 
 stream-unzip does not offer defaults for any of these 5 properties.
