@@ -400,6 +400,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
 
             zip_64_central_directory = zip_64_central_directory \
                 or (_auto_upgrade_central_directory is _AUTO_UPGRADE_CENTRAL_DIRECTORY and offset > 0xffffffff) \
+                or (_auto_upgrade_central_directory is _AUTO_UPGRADE_CENTRAL_DIRECTORY and len(central_directory) > 0xffff) \
                 or _method in (_ZIP_64, _NO_COMPRESSION_64)
 
         max_central_directory_length, max_central_directory_start_offset, max_central_directory_size = \
