@@ -26,11 +26,11 @@ These modes use the Zip64 extension to the original ZIP format.
 
 Each member file is limited to 16EiB (exbibyte). This limitation is on the uncompressed size of the data, and (if `ZIP_64`) the compressed size of the data, and how far the member starts from the beginning in the final ZIP file. If these limits are breached, a `ZipOverflowError` will be raised.
 
-Support is limited to newer clients. Also, at the time of writing there are two known cases where even modern client support is limited:
+Support is limited to newer clients. However, at the time of writing there are three known cases where even modern client support is limited:
 
-- LibreOffice does not support OpenDocument files that are created with the Zip64 extension.
-- If a ZIP has its first member as Zip64, MacOS Safari will auto extract that one file, and the others will be ignored. This means that in most cases, if your ZIP file is to be made available via download from web pages, its first member file should never be `ZIP_64` or `NO_COMPRESSION_64`. Instead, use `ZIP_32` or `NO_COMPRESSION_32`.
-
+- [LibreOffice does not support OpenDocument files that are created with the Zip64 extension.](https://bugs.documentfoundation.org/show_bug.cgi?id=128244)
+- [Java's ZipInputStream will fail on Zip64 files in some cases.](https://bugs.openjdk.org/browse/JDK-8298530)
+- [MacOS Safari's default auto extract behaviour only extracts the first member of a ZIP if that first member is Zip64, and effectively deletes the others.](https://github.com/uktrade/stream-zip/pull/42) This means that in most cases, if your ZIP file is to be made available via download from web pages, and if it has more than one member file, the first member file should never be `ZIP_64` or `NO_COMPRESSION_64`. Instead, use `ZIP_32` or `NO_COMPRESSION_32`.
 
 ## ZIP_AUTO(uncompressed_size, level=9)
 
