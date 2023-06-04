@@ -97,7 +97,7 @@ This pattern of generators is typical for stream-unzip. It allows avoiding loadi
 
 ## Modes
 
-Each member file has a mode that must be specified in client code. See [Modes](limitations.md) for an explanation of each.
+Each member file has a mode that must be specified in client code. See [Modes](modes.md) for an explanation of each.
 
 
 ## Limitations
