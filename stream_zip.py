@@ -98,6 +98,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
 
         central_directory = deque()
         central_directory_size = 0
+        central_directory_start_offset = 0
         zip_64_central_directory = False
         offset = 0
 
@@ -407,17 +408,17 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 or (_auto_upgrade_central_directory is _AUTO_UPGRADE_CENTRAL_DIRECTORY and len(central_directory) > 0xffff) \
                 or _method in (_ZIP_64, _NO_COMPRESSION_64)
 
-        max_central_directory_length, max_central_directory_start_offset, max_central_directory_size = \
-            (0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff) if zip_64_central_directory else \
-            (0xffff, 0xffffffff, 0xffffffff)
+            max_central_directory_length, max_central_directory_start_offset, max_central_directory_size = \
+                (0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff) if zip_64_central_directory else \
+                (0xffff, 0xffffffff, 0xffffffff)
 
-        central_directory_start_offset = offset
-        central_directory_end_offset = offset + central_directory_size
+            central_directory_start_offset = offset
+            central_directory_end_offset = offset + central_directory_size
 
-        _raise_if_beyond(central_directory_start_offset, maximum=max_central_directory_start_offset, exception_class=OffsetOverflowError)
-        _raise_if_beyond(len(central_directory), maximum=max_central_directory_length, exception_class=CentralDirectoryNumberOfEntriesOverflowError)
-        _raise_if_beyond(central_directory_size, maximum=max_central_directory_size, exception_class=CentralDirectorySizeOverflowError)
-        _raise_if_beyond(central_directory_end_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
+            _raise_if_beyond(central_directory_start_offset, maximum=max_central_directory_start_offset, exception_class=OffsetOverflowError)
+            _raise_if_beyond(len(central_directory), maximum=max_central_directory_length, exception_class=CentralDirectoryNumberOfEntriesOverflowError)
+            _raise_if_beyond(central_directory_size, maximum=max_central_directory_size, exception_class=CentralDirectorySizeOverflowError)
+            _raise_if_beyond(central_directory_end_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
 
         for central_directory_header_entry, name_encoded, extra in central_directory:
             yield from _(central_directory_header_signature)
