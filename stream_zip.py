@@ -30,18 +30,14 @@ def ZIP_AUTO(uncompressed_size, level=9):
         #
         # uncompressed_size + (uncompressed_size >> 12) + (uncompressed_size >> 14) + (uncompressed_size >> 25) + 7
         #
-        # This is the 0.03% deflate bound for default memLevel of 8 (and wbits), and it so we assume
-        # that it is a higher memLevel should never increase the size beyond this limit. In fact, higher memLevel
-        # should result in smaller sizes. This is backed up by experiments on random data.
+        # This is the 0.03% deflate bound for memLevel of 8 default abs(wbits) = MAX_WBITS
         #
-        # Also, Python's interaction with zlib is also not consistent between versions of Python
+        # Note that Python's interaction with zlib is not consistent between versions of Python
         # https://stackoverflow.com/q/76371334/1319998
-        # so Python could be causing extra deflate-chunks output which could break the limit. However, since we
-        # enforce memLevel 9 which outputs smaller compressed data, this gives a margin of safety. There is
-        # probably a lower limit, but would need to be very sure how zlib works with memLevel 9, and Python's
-        # interaction with it
+        # so Python could be causing extra deflate-chunks output which could break the limit. However, couldn't
+        # get output of sized 4293656841 to break the Zip32 bound of 0xffffffff here for any level, including 0
         method = _ZIP_64 if uncompressed_size > 4293656841 or offset > 0xffffffff else _ZIP_32
-        return (method, _AUTO_UPGRADE_CENTRAL_DIRECTORY, lambda: zlib.compressobj(level=level, memLevel=9, wbits=-zlib.MAX_WBITS))
+        return (method, _AUTO_UPGRADE_CENTRAL_DIRECTORY, lambda: zlib.compressobj(level=level, memLevel=8, wbits=-zlib.MAX_WBITS))
     return method_compressobj
 
 
