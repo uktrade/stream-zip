@@ -36,4 +36,4 @@ Support is limited to newer clients. Also, at the time of writing there are two 
 
 This dynamic mode chooses `ZIP_32` if it is sure a `ZipOverflowError` won't occur with its lower limits, but chooses `ZIP_64` otherwise. It uses the required parameter of `uncompressed_size`, as well as other more under the hood details, such as how far the member file would appear from the start of the ZIP file.
 
-Compressesion level can be changed by overwriting the `level` parameter. Specifically, passing `level=0` disables compresion for this member file, but its size would increase slightly due to the overhead of the underlying algorithm. It is not affected by the `get_compressobj` parameter to `stream_unzip`.
+Compression level can be changed by overwriting the `level` parameter. Specifically, passing `level=0` disables compresion for this member file, but its size would increase slightly due to the overhead of the underlying algorithm. It is not affected by the `get_compressobj` parameter to `stream_unzip`.
