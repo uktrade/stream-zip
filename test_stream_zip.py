@@ -468,17 +468,34 @@ def test_with_zipfile_no_files():
     assert len(list(extracted())) == 0
 
 
-def test_too_many_files_zip_32():
+def test_too_many_files_for_zip_32_raises_exception_in_zip_32_mode():
     now = datetime.fromisoformat('2021-01-01 21:01:12')
     perms = 0o600
 
     def files():
-        for i in range(0, 100000):
+        for i in range(0, 0xffff + 1):
             yield f'file-{i}', now, perms, ZIP_32, (b'ab',)
 
     with pytest.raises(CentralDirectoryNumberOfEntriesOverflowError):
         for chunk in stream_zip(files()):
             pass
+
+
+def test_too_many_files_for_zip_32_no_exception_in_auto_mode():
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    perms = 0o600
+
+    def files():
+        for i in range(0, 0xffff + 1):
+            yield f'file-{i}', now, perms, ZIP_AUTO(2), (b'ab',)
+
+    num_files = 0
+    for _, __, chunks in stream_unzip(stream_zip(files())):
+        for chunk in chunks:
+            pass
+        num_files += 1
+
+    assert num_files == 0xffff + 1
 
 
 def test_central_directory_size_overflow():
