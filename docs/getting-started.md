@@ -79,7 +79,7 @@ for zipped_chunk in zipped_chunks:
     print(zipped_chunk)
 ```
 
-Each iterable of binary chunks of file contents could be a generator.
+Each iterable of binary chunks of file contents could itself be a generator.
 
 ```python
 from datetime import datetime
@@ -104,7 +104,7 @@ for zipped_chunk in zipped_chunks:
     print(zipped_chunk)
 ```
 
-This pattern of generators is typical for stream-unzip. It allows avoiding loading all the bytes of member files into memory at once.
+This pattern of generators is typical for stream-unzip. Depending on how the generators are defined, it allows avoiding loading all the bytes of member files into memory at once.
 
 
 ## Modes
