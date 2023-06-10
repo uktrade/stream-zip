@@ -45,6 +45,13 @@ member_files = (
         ZIP_32,              # ZIP_32 has good support but limited to 4GiB
         (b'Some bytes 1',),  # Iterable of chunks of contents
     ),
+    (
+        'my-file-2.txt',
+        datetime.now(),
+        0o600,
+        ZIP_32,
+        (b'Some bytes 2',),
+    ),
 )
 zipped_chunks = stream_zip(member_files):
 
@@ -64,6 +71,7 @@ def member_files():
     modified_at = datetime.now()
     perms = 0o600
     yield ('my-file-1.txt', modified_at, perms, ZIP_32, (b'Some bytes 1',))
+    yield ('my-file-2.txt', modified_at, perms, ZIP_32, (b'Some bytes 2',))
 
 zipped_chunks = stream_zip(member_files()):
 
@@ -84,7 +92,11 @@ def member_files():
     def file_1_data():
         yield b'Some bytes 1'
 
+    def file_2_data():
+        yield b'Some bytes 2'
+
     yield ('my-file-1.txt', modified_at, perms, ZIP_32, file_1_data())
+    yield ('my-file-2.txt', modified_at, perms, ZIP_32, file_2_data())
 
 zipped_chunks = stream_zip(member_files()):
 
