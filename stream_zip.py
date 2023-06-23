@@ -1,5 +1,6 @@
 from collections import deque
 from struct import Struct
+import stat
 import zlib
 
 _NO_COMPRESSION_32 = object()
@@ -358,7 +359,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
 
         def _no_compression_buffered_data_size_crc_32(chunks, maximum_size):
             # We cannot have a data descriptor, and so have to be able to determine the total
-            # length and CRC32 before output ofchunks to client code
+            # length and CRC32 before output of chunks to client code
 
             size = 0
             crc_32 = zlib.crc32(b'')
@@ -375,11 +376,40 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
 
             return chunks, size, crc_32
 
-        for name, modified_at, perms, method, chunks in files:
+        def _fix_unix_mode(st_mode, name_is_dir):
+            # Ensures that we always encode a valid UNIX mode in the ZIP, even when only given
+            # partial mode bits (such as just the permission bits)
+
+            file_type = stat.S_IFMT(st_mode)
+            if file_type == 0:  # Skips if file type was provided
+                if name_is_dir:
+                    st_mode |= stat.S_IFDIR  # Directory
+                else:
+                    st_mode |= stat.S_IFREG  # Regular file
+
+            return st_mode
+
+        def _external_attr(st_mode, name_is_dir):
+            st_mode = _fix_unix_mode(st_mode, name_is_dir)
+
+            # Determine if final UNIX mode represents a directory, regardless of "name_is_dir"
+            mode_is_dir = stat.S_ISDIR(st_mode)
+
+            # Place the UNIX mode attributes in the high 16 bits, and legacy MS-DOS backwards
+            # compatibility attributes in the low 16 bits (ignored by modern unzip utils)
+            external_attr = st_mode << 16
+            if mode_is_dir:
+                external_attr |= 0x10  # MS-DOS directory
+
+            return external_attr, mode_is_dir
+
+        for name, modified_at, st_mode, method, chunks in files:
             _method, _auto_upgrade_central_directory, _get_compress_obj = method(offset, get_compressobj)
 
             name_encoded = name.encode('utf-8')
             _raise_if_beyond(len(name_encoded), maximum=0xffff, exception_class=NameLengthOverflowError)
+
+            name_is_dir = name_encoded[-1:] == b'/'
 
             mod_at_encoded = modified_at_struct.pack(
                 int(modified_at.second / 2) | \
@@ -389,10 +419,10 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 (modified_at.month << 5) | \
                 (modified_at.year - 1980) << 9,
             )
-            external_attr = \
-                (perms << 16) | \
-                (0x10 if name_encoded[-1:] == b'/' else 0x0)  # MS-DOS directory
-
+            external_attr, is_dir = \
+                _external_attr(st_mode, name_is_dir)
+            # TODO: raise if name_is_dir != is_dir (illegal mismatch between filename and UNIX filetype attr)
+            # TODO: raise if is_dir and data length > 0 (directories are not allowed to contain data bytes)
             data_func = \
                 _zip_64_local_header_and_data if _method is _ZIP_64 else \
                 _zip_32_local_header_and_data if _method is _ZIP_32 else \

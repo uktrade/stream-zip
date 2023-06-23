@@ -326,13 +326,13 @@ def test_with_zipfile_zip_64():
         'file-1 🍰',
         20000,
         (2021, 1, 1, 21, 1, 12),
-        perms << 16,
+        (perms | stat.S_IFREG) << 16,
         b'a' * 10000 + b'b' * 10000,
     ), (
         'file-2 🍰',
         2,
         (2021, 1, 1, 21, 1, 12),
-        perms << 16,
+        (perms | stat.S_IFREG) << 16,
         b'cd',
     )] == list(extracted())
 
@@ -361,13 +361,13 @@ def test_with_zipfile_zip_32():
         'file-1',
         20000,
         (2021, 1, 1, 21, 1, 12),
-        perms << 16,
+        (perms | stat.S_IFREG) << 16,
         b'a' * 10000 + b'b' * 10000,
     ), (
         'file-2',
         2,
         (2021, 1, 1, 21, 1, 12),
-        perms << 16,
+        (perms | stat.S_IFREG) << 16,
         b'cd',
     )] == list(extracted())
 
@@ -396,13 +396,13 @@ def test_with_zipfile_zip_32_and_zip_64():
         'file-1',
         20000,
         (2021, 1, 1, 21, 1, 12),
-        perms << 16,
+        (perms | stat.S_IFREG) << 16,
         b'a' * 10000 + b'b' * 10000,
     ), (
         'file-2',
         2,
         (2021, 1, 1, 21, 1, 12),
-        perms << 16,
+        (perms | stat.S_IFREG) << 16,
         b'cd',
     )] == list(extracted())
 
@@ -431,13 +431,13 @@ def test_with_zipfile_without_compression():
         'file-1',
         20000,
         (2021, 1, 1, 21, 1, 12),
-        perms << 16,
+        (perms | stat.S_IFREG) << 16,
         b'a' * 10000 + b'b' * 10000,
     ), (
         'file-2',
         2,
         (2021, 1, 1, 21, 1, 12),
-        perms << 16,
+        (perms | stat.S_IFREG) << 16,
         b'cd',
     )] == list(extracted())
 
@@ -535,14 +535,57 @@ def test_directory_zipfile():
         'file-1',
         20000,
         (2021, 1, 1, 21, 1, 12),
-        perms << 16,
+        (perms | stat.S_IFREG) << 16,  # Regular file flag
         b'a' * 10000 + b'b' * 10000,
     ), (
         'file-2/',
         0,
         (2021, 1, 1, 21, 1, 12),
-        perms << 16 | 0x10,
+        ((perms | stat.S_IFDIR) << 16) | 0x10,  # Directory flag + MS-DOS dir attribute
         b'',
+    )] == list(extracted())
+
+
+def test_advanced_unix_mode_zipfile():
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    perms = 0o600
+    st_mode = perms | stat.S_IFLNK  # Symbolic link flag
+
+    def files():
+        yield 'file-1', now, perms, ZIP_32, (b'Some bytes 1',)
+        yield 'link-1', now, st_mode, ZIP_64, (b'file-1',)
+        yield 'link-2', now, st_mode, ZIP_32, (b'file-1',)
+
+    def extracted():
+        with ZipFile(BytesIO(b''.join(stream_zip(files())))) as my_zip:
+            for my_info in my_zip.infolist():
+                with my_zip.open(my_info.filename) as my_file:
+                    yield (
+                        my_info.filename,
+                        my_info.file_size,
+                        my_info.date_time,
+                        my_info.external_attr,
+                        my_file.read(),
+                    )
+
+    assert [(
+        'file-1',
+        12,
+        (2021, 1, 1, 21, 1, 12),
+        (perms | stat.S_IFREG) << 16,  # Regular file flag
+        b'Some bytes 1',
+    ), (
+        'link-1',
+        6,
+        (2021, 1, 1, 21, 1, 12),
+        st_mode << 16,  # Symbolic link flag
+        b'file-1',
+    ), (
+        'link-2',
+        6,
+        (2021, 1, 1, 21, 1, 12),
+        st_mode << 16,  # Symbolic link flag
+        b'file-1',
     )] == list(extracted())
 
 
