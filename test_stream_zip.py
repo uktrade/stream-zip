@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from io import BytesIO
 import contextlib
 import os
@@ -899,3 +899,122 @@ def test_bsdio_empty_directory(method, trailing_slash, mode, expected_mode):
         subprocess.run([bsdcpio, f'{d}/test.zip', '-d', d])
 
         assert stat.filemode(os.lstat('my-dir').st_mode) == expected_mode
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        ZIP_32,
+        ZIP_64,
+        NO_COMPRESSION_64,
+        NO_COMPRESSION_32,
+    ],
+)
+@pytest.mark.parametrize(
+    "modified_at,expected_time",
+    [
+        (datetime(2011, 1, 1, 1, 2, 3, 123), (2011, 1, 1, 1, 2, 2)),
+        (datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=0))), (2011, 1, 1, 1, 2, 2)),
+        (datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=1))), (2011, 1, 1, 1, 2, 2)),
+        (datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=-1))), (2011, 1, 1, 1, 2, 2)),
+        (datetime(2011, 1, 1, 1, 2, 3, 123), (2011, 1, 1, 1, 2, 2)),
+        (datetime(2011, 1, 1, 1, 2, 4, 123, tzinfo=timezone(timedelta(hours=0))), (2011, 1, 1, 1, 2, 4)),
+        (datetime(2011, 1, 1, 1, 2, 4, 123, tzinfo=timezone(timedelta(hours=1))), (2011, 1, 1, 1, 2, 4)),
+        (datetime(2011, 1, 1, 1, 2, 4, 123, tzinfo=timezone(timedelta(hours=-1))), (2011, 1, 1, 1, 2, 4)),
+    ],
+)
+def test_zipfile_modification_time(method, modified_at, expected_time):
+    member_files = (
+        ('my_file', modified_at, stat.S_IFREG | 0o600, method, ()),
+    )
+    zipped_chunks = stream_zip(member_files)
+
+    def extracted():
+        with ZipFile(BytesIO(b''.join(zipped_chunks))) as my_zip:
+            for my_info in my_zip.infolist():
+                with my_zip.open(my_info.filename) as my_file:
+                    yield (
+                        my_info.filename,
+                        my_info.date_time,
+                    )
+
+    assert [('my_file', expected_time)] == list(extracted())
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        ZIP_32,
+        ZIP_64,
+        NO_COMPRESSION_64,
+        NO_COMPRESSION_32,
+    ],
+)
+@pytest.mark.parametrize(
+    "timezone,modified_at",
+    [
+        ('UTC+0', datetime(2011, 1, 1, 1, 2, 3, 123)),
+        ('UTC+0', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=0)))),
+        ('UTC+0', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=1)))),
+        ('UTC+0', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=-1)))),
+        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123)),
+        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=0)))),
+        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=1)))),
+        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=-1)))),
+        ('UTC-1', datetime(2011, 1, 1, 1, 2, 3, 123)),
+        ('UTC-1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=0)))),
+        ('UTC-1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=1)))),
+        ('UTC-1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=-1)))),
+    ],
+)
+def test_unzip_modification_time(method, timezone, modified_at):
+    member_files = (
+        ('my_file', modified_at, stat.S_IFREG | 0o600, method, ()),
+    )
+    zipped_chunks = stream_zip(member_files)
+
+    with \
+            TemporaryDirectory() as d, \
+            cwd(d): \
+
+        with open('test.zip', 'wb') as fp:
+            for zipped_chunk in zipped_chunks:
+                fp.write(zipped_chunk)
+
+        subprocess.run(['unzip', f'{d}/test.zip', '-d', d], env={'TZ': timezone})
+
+        assert os.path.getmtime('my_file') == int(modified_at.timestamp())
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        ZIP_32,
+        ZIP_64,
+        NO_COMPRESSION_64,
+        NO_COMPRESSION_32,
+    ],
+)
+@pytest.mark.parametrize(
+    "timezone,modified_at,expected_modified_at",
+    [
+        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123), datetime(2011, 1, 1, 2, 2, 2, 0)),
+    ],
+)
+def test_unzip_modification_time_extended_timestamps_disabled(method, timezone, modified_at, expected_modified_at):
+    member_files = (
+        ('my_file', modified_at, stat.S_IFREG | 0o600, method, ()),
+    )
+    zipped_chunks = stream_zip(member_files, extended_timestamps=False)
+
+    with \
+            TemporaryDirectory() as d, \
+            cwd(d): \
+
+        with open('test.zip', 'wb') as fp:
+            for zipped_chunk in zipped_chunks:
+                fp.write(zipped_chunk)
+
+        subprocess.run(['unzip', f'{d}/test.zip', '-d', d], env={'TZ': timezone})
+
+        assert os.path.getmtime('my_file') == expected_modified_at.timestamp()
