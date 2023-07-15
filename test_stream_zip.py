@@ -906,6 +906,8 @@ def test_bsdio_empty_directory(method, trailing_slash, mode, expected_mode):
     [
         ZIP_32,
         ZIP_64,
+        NO_COMPRESSION_64,
+        NO_COMPRESSION_32,
     ],
 )
 @pytest.mark.parametrize(
@@ -944,6 +946,8 @@ def test_zipfile_modification_time(method, modified_at, expected_time):
     [
         ZIP_32,
         ZIP_64,
+        NO_COMPRESSION_64,
+        NO_COMPRESSION_32,
     ],
 )
 @pytest.mark.parametrize(

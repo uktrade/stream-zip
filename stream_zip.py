@@ -111,7 +111,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             if offset > maximum:
                 raise exception_class()
 
-        def _zip_64_local_header_and_data(name_encoded, mod_at_encoded, external_attr, _get_compress_obj, chunks):
+        def _zip_64_local_header_and_data(name_encoded, mod_at_ms_dos, external_attr, _get_compress_obj, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
@@ -127,7 +127,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 45,           # Version
                 b'\x08\x08',  # Flags - data descriptor and utf-8 file names
                 8,            # Compression - deflate
-                mod_at_encoded,
+                mod_at_ms_dos,
                 0,            # CRC32 - 0 since data descriptor
                 0xffffffff,   # Compressed size - since zip64
                 0xffffffff,   # Uncompressed size - since zip64
@@ -161,7 +161,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 0,            # Reserved
                 b'\x08\x08',  # Flags - data descriptor and utf-8 file names
                 8,            # Compression - deflate
-                mod_at_encoded,
+                mod_at_ms_dos,
                 crc_32,
                 0xffffffff,   # Compressed size - since zip64
                 0xffffffff,   # Uncompressed size - since zip64
@@ -174,7 +174,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 0xffffffff,   # Offset of local header - since zip64
             ), name_encoded, extra
 
-        def _zip_32_local_header_and_data(name_encoded, mod_at_encoded, external_attr, _get_compress_obj, chunks):
+        def _zip_32_local_header_and_data(name_encoded, mod_at_ms_dos, external_attr, _get_compress_obj, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffff, exception_class=OffsetOverflowError)
@@ -184,7 +184,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 20,           # Version
                 b'\x08\x08',  # Flags - data descriptor and utf-8 file names
                 8,            # Compression - deflate
-                mod_at_encoded,
+                mod_at_ms_dos,
                 0,            # CRC32 - 0 since data descriptor
                 0,            # Compressed size - 0 since data descriptor
                 0,            # Uncompressed size - 0 since data descriptor
@@ -211,7 +211,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 0,            # Reserved
                 b'\x08\x08',  # Flags - data descriptor and utf-8 file names
                 8,            # Compression - deflate
-                mod_at_encoded,
+                mod_at_ms_dos,
                 crc_32,
                 compressed_size,
                 uncompressed_size,
@@ -251,7 +251,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
 
             return uncompressed_size, compressed_size, crc_32
 
-        def _no_compression_64_local_header_and_data(name_encoded, mod_at_encoded, external_attr, _get_compress_obj, chunks):
+        def _no_compression_64_local_header_and_data(name_encoded, mod_at_ms_dos, external_attr, _get_compress_obj, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
@@ -269,7 +269,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 45,           # Version
                 b'\x00\x08',  # Flags - utf-8 file names
                 0,            # Compression - no compression
-                mod_at_encoded,
+                mod_at_ms_dos,
                 crc_32,
                 0xffffffff,   # Compressed size - since zip64
                 0xffffffff,   # Uncompressed size - since zip64
@@ -296,7 +296,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                0,            # Reserved
                b'\x00\x08',  # Flags - utf-8 file names
                0,            # Compression - none
-               mod_at_encoded,
+               mod_at_ms_dos,
                crc_32,
                0xffffffff,   # Compressed size - since zip64
                0xffffffff,   # Uncompressed size - since zip64
@@ -310,7 +310,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             ), name_encoded, extra
 
 
-        def _no_compression_32_local_header_and_data(name_encoded, mod_at_encoded, external_attr, _get_compress_obj, chunks):
+        def _no_compression_32_local_header_and_data(name_encoded, mod_at_ms_dos, external_attr, _get_compress_obj, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffff, exception_class=OffsetOverflowError)
@@ -323,7 +323,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 20,           # Version
                 b'\x00\x08',  # Flags - utf-8 file names
                 0,            # Compression - no compression
-                mod_at_encoded,
+                mod_at_ms_dos,
                 crc_32,
                 size,         # Compressed
                 size,         # Uncompressed
@@ -343,7 +343,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                0,            # Reserved
                b'\x00\x08',  # Flags - utf-8 file names
                0,            # Compression - none
-               mod_at_encoded,
+               mod_at_ms_dos,
                crc_32,
                size,         # Compressed
                size,         # Uncompressed
@@ -381,7 +381,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             name_encoded = name.encode('utf-8')
             _raise_if_beyond(len(name_encoded), maximum=0xffff, exception_class=NameLengthOverflowError)
 
-            mod_at_encoded = modified_at_struct.pack(
+            mod_at_ms_dos = modified_at_struct.pack(
                 int(modified_at.second / 2) | \
                 (modified_at.minute << 5) | \
                 (modified_at.hour << 11),
@@ -399,7 +399,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 _no_compression_64_local_header_and_data if _method is _NO_COMPRESSION_64 else \
                 _no_compression_32_local_header_and_data
 
-            central_directory_header_entry, name_encoded, extra = yield from data_func(name_encoded, mod_at_encoded, external_attr, _get_compress_obj, evenly_sized(chunks))
+            central_directory_header_entry, name_encoded, extra = yield from data_func(name_encoded, mod_at_ms_dos, external_attr, _get_compress_obj, evenly_sized(chunks))
             central_directory_size += len(central_directory_header_signature) + len(central_directory_header_entry) + len(name_encoded) + len(extra)
             central_directory.append((central_directory_header_entry, name_encoded, extra))
 
