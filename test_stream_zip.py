@@ -951,23 +951,23 @@ def test_zipfile_modification_time(method, modified_at, expected_time):
     ],
 )
 @pytest.mark.parametrize(
-    "timezone,modified_at,expected_time",
+    "timezone,modified_at",
     [
-        ('UTC+0', datetime(2011, 1, 1, 1, 2, 3, 123), datetime(2011, 1, 1, 1, 2, 2).timestamp()),
-        ('UTC+0', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=0))), datetime(2011, 1, 1, 1, 2, 2).timestamp()),
-        ('UTC+0', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=1))), datetime(2011, 1, 1, 1, 2, 2).timestamp()),
-        ('UTC+0', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=-1))), datetime(2011, 1, 1, 1, 2, 2).timestamp()),
-        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123), datetime(2011, 1, 1, 1, 2, 2).timestamp() + 60 * 60),
-        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=0))), datetime(2011, 1, 1, 1, 2, 2).timestamp() + 60 * 60),
-        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=1))), datetime(2011, 1, 1, 1, 2, 2).timestamp() + 60 * 60),
-        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=-1))), datetime(2011, 1, 1, 1, 2, 2).timestamp() + 60 * 60),
-        ('UTC-1', datetime(2011, 1, 1, 1, 2, 3, 123), datetime(2011, 1, 1, 1, 2, 2).timestamp() - 60 * 60),
-        ('UTC-1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=0))), datetime(2011, 1, 1, 1, 2, 2).timestamp() - 60 * 60),
-        ('UTC-1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=1))), datetime(2011, 1, 1, 1, 2, 2).timestamp() - 60 * 60),
-        ('UTC-1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=-1))), datetime(2011, 1, 1, 1, 2, 2).timestamp() - 60 * 60),
+        ('UTC+0', datetime(2011, 1, 1, 1, 2, 3, 123)),
+        ('UTC+0', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=0)))),
+        ('UTC+0', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=1)))),
+        ('UTC+0', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=-1)))),
+        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123)),
+        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=0)))),
+        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=1)))),
+        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=-1)))),
+        ('UTC-1', datetime(2011, 1, 1, 1, 2, 3, 123)),
+        ('UTC-1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=0)))),
+        ('UTC-1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=1)))),
+        ('UTC-1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=-1)))),
     ],
 )
-def test_unzip_modification_time(method, timezone, modified_at, expected_time):
+def test_unzip_modification_time(method, timezone, modified_at):
     member_files = (
         ('my_file', modified_at, stat.S_IFREG | 0o600, method, ()),
     )
@@ -983,4 +983,4 @@ def test_unzip_modification_time(method, timezone, modified_at, expected_time):
 
         subprocess.run(['unzip', f'{d}/test.zip', '-d', d], env={'TZ': timezone})
 
-        assert os.path.getmtime('my_file') == expected_time
+        assert os.path.getmtime('my_file') == int(modified_at.timestamp())

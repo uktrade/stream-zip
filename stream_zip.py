@@ -94,6 +94,9 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
         zip_64_local_extra_struct = Struct('<2sHQQ')
         zip_64_central_directory_extra_struct = Struct('<2sHQQQ')
 
+        mod_at_unix_extra_signature = b'UT'
+        mod_at_unix_extra_struct = Struct('<2sH1sl')
+
         modified_at_struct = Struct('<HH')
 
         central_directory = deque()
@@ -111,7 +114,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             if offset > maximum:
                 raise exception_class()
 
-        def _zip_64_local_header_and_data(name_encoded, mod_at_ms_dos, external_attr, _get_compress_obj, chunks):
+        def _zip_64_local_header_and_data(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, _get_compress_obj, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
@@ -121,7 +124,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 16,  # Size of extra
                 0,   # Uncompressed size - since data descriptor
                 0,   # Compressed size - since data descriptor
-            )
+            ) + mod_at_unix_extra
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 45,           # Version
@@ -153,7 +156,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 uncompressed_size,
                 compressed_size,
                 file_offset,
-            )
+            ) + mod_at_unix_extra
             return central_directory_header_struct.pack(
                 45,           # Version made by
                 3,            # System made by (UNIX)
@@ -174,11 +177,12 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 0xffffffff,   # Offset of local header - since zip64
             ), name_encoded, extra
 
-        def _zip_32_local_header_and_data(name_encoded, mod_at_ms_dos, external_attr, _get_compress_obj, chunks):
+        def _zip_32_local_header_and_data(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, _get_compress_obj, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffff, exception_class=OffsetOverflowError)
 
+            extra = mod_at_unix_extra
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 20,           # Version
@@ -189,9 +193,10 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 0,            # Compressed size - 0 since data descriptor
                 0,            # Uncompressed size - 0 since data descriptor
                 len(name_encoded),
-                0,            # Length of local extra
+                len(extra),
             ))
             yield from _(name_encoded)
+            yield from _(extra)
 
             uncompressed_size, compressed_size, crc_32 = yield from _zip_data(
                 chunks,
@@ -203,7 +208,6 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             yield from _(data_descriptor_signature)
             yield from _(data_descriptor_zip_32_struct.pack(crc_32, compressed_size, uncompressed_size))
 
-            extra = b''
             return central_directory_header_struct.pack(
                 20,           # Version made by
                 3,            # System made by (UNIX)
@@ -251,7 +255,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
 
             return uncompressed_size, compressed_size, crc_32
 
-        def _no_compression_64_local_header_and_data(name_encoded, mod_at_ms_dos, external_attr, _get_compress_obj, chunks):
+        def _no_compression_64_local_header_and_data(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, _get_compress_obj, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
@@ -263,7 +267,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 16,    # Size of extra
                 size,  # Uncompressed
                 size,  # Compressed
-            )
+            ) + mod_at_unix_extra
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 45,           # Version
@@ -288,7 +292,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 size,  # Uncompressed
                 size,  # Compressed
                 file_offset,
-            )
+            ) + mod_at_unix_extra
             return central_directory_header_struct.pack(
                45,           # Version made by
                3,            # System made by (UNIX)
@@ -310,14 +314,14 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             ), name_encoded, extra
 
 
-        def _no_compression_32_local_header_and_data(name_encoded, mod_at_ms_dos, external_attr, _get_compress_obj, chunks):
+        def _no_compression_32_local_header_and_data(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, _get_compress_obj, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffff, exception_class=OffsetOverflowError)
 
             chunks, size, crc_32 = _no_compression_buffered_data_size_crc_32(chunks, maximum_size=0xffffffff)
 
-            extra = b''
+            extra = mod_at_unix_extra
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 20,           # Version
@@ -389,6 +393,12 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 (modified_at.month << 5) | \
                 (modified_at.year - 1980) << 9,
             )
+            mod_at_unix_extra = mod_at_unix_extra_struct.pack(
+                mod_at_unix_extra_signature,
+                5,        # Size of extra
+                b'\x01',  # Only modification time (as opposed to also other times)
+                int(modified_at.timestamp()),
+            )
             external_attr = \
                 (mode << 16) | \
                 (0x10 if name_encoded[-1:] == b'/' else 0x0)  # MS-DOS directory
@@ -399,7 +409,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 _no_compression_64_local_header_and_data if _method is _NO_COMPRESSION_64 else \
                 _no_compression_32_local_header_and_data
 
-            central_directory_header_entry, name_encoded, extra = yield from data_func(name_encoded, mod_at_ms_dos, external_attr, _get_compress_obj, evenly_sized(chunks))
+            central_directory_header_entry, name_encoded, extra = yield from data_func(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, _get_compress_obj, evenly_sized(chunks))
             central_directory_size += len(central_directory_header_signature) + len(central_directory_header_entry) + len(name_encoded) + len(extra)
             central_directory.append((central_directory_header_entry, name_encoded, extra))
 
