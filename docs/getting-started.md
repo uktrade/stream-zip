@@ -110,6 +110,19 @@ for zipped_chunk in zipped_chunks:
 This pattern of generators is typical for stream-unzip. Depending on how the generators are defined, it allows avoiding loading all the bytes of member files into memory at once.
 
 
+## Symbolic links
+
+Symbolic links can be stored in ZIP files. The mode must have `stat.S_IFLNK`, and the binary contents of the file must be the path to the target of the symbolic link.
+
+```python
+from datetime import datetime
+from stat import S_IFLNK
+from stream_zip import ZIP_32
+
+link = ('source.txt', datetime.now(), S_IFLNK | 0o600, ZIP_32, (b'target.txt',))
+```
+
+
 ## Methods
 
 Each member file is compressed with a method that must be specified in client code. See [Methods](methods.md) for an explanation of each.
