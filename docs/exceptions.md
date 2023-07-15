@@ -14,36 +14,32 @@ Exceptions raised by the source iterables are passed through the `stream_zip` fu
 
           - **ZipOverflowError** (also inherits from the **OverflowError** built-in)
 
-            The size or positions of data in the ZIP are too large to store in the requested mode
+            The size or positions of data in the ZIP are too large to store using the requested method
 
             - **UncompressedSizeOverflowError**
 
-                The uncompressed size of a member file is too large. The maximum uncompressed size for ZIP_32 mode is 2^32 - 1 bytes, and for ZIP_64 mode is 2^64 - 1 bytes.
+                The uncompressed size of a member file is too large. For a `*_32` member file the maximum uncompressed size is 2^32 - 1 bytes, and for a `*_64` member file the maximum uncompressed size is 2^64 - 1 bytes.
 
             - **CompressedSizeOverflowError**
 
-                The compressed size of a member file is too large. The maximum compressed size for ZIP_32 mode is 2^32 - 1 bytes, and for ZIP_64 mode is 2^64 - 1 bytes.
+                The compressed size of a member file is too large. For a `*_32` member file the maximum compressed size is 2^32 - 1 bytes, and for a `*_64` member file the maximum compressed size is 2^64 - 1 bytes.
 
             - **CentralDirectorySizeOverflowError**
 
-                The size of the central directory, a section at the end of the ZIP that lists all the member files. The maximum size for ZIP_32 mode is 2^32 - 1 bytes, and for ZIP_64 mode is 2^64 - 1 bytes.
-
-                If any `_64` mode files are in the ZIP, the central directory is in ZIP_64 mode, and ZIP_32 mode otherwise.
+                The central directory, a section at the end of the ZIP that lists all the member files, is too large. The maximum size of the central directory if there are only `*_32` member files is 2^32 - 1 bytes. If there are any `*_64` member files the maximum size is 2^64 - 1 bytes.
 
             - **CentralDirectoryNumberOfEntriesOverflowError**
 
-                Too many entries in the central directory, a section at the end of the ZIP that lists all the member files. The limit for ZIP_32 mode is 2^16 - 1 entries, and for ZIP_64 mode is 2^64 - 1 entries.
-
-                If any `_64` mode files are in the ZIP, the central directory is in ZIP_64 mode, and ZIP_32 mode otherwise.
+                The central directory, a section at the end of the ZIP that lists all the member files, has too many entries. If there are only `*_32` member files the maximum number of entries is 2^16 - 1. If there are any `*_64` member files, the maximum number of entries is 2^64 - 1.
 
             - **OffsetOverflowError**
 
-                The offset of data in the ZIP is too high, i.e. the ZIP is too large. The limit for ZIP_32 mode is 2^32 - 1 bytes, and for ZIP_64 mode is 2^64 - 1 bytes.
+                The offset of data in the ZIP is too high, i.e. the ZIP is too large. If there are only `*_32` member files the maximum offset is 2^32 - 1 bytes. If there are any `*_64` member files the maximum offset is 2^64 - 1 bytes.
 
-                This can be raised when stream-zip adds member files, or when it adds the central directory at the end of the ZIP file. If any `_64` mode files are in the ZIP, the central directory is in ZIP_64 mode, and ZIP_32 mode otherwise.
+                This can be raised when stream-zip adds member files, or when it adds the central directory at the end of the ZIP file.
 
-                It is possible for the ZIP file to be larger than the maximum allowed offset without this exception being thrown. For example in ZIP_32 mode the archive can can be larger than 2^32 - 1 bytes.
+                Due to the nature of the ZIP file format, it is possible for the ZIP file to be larger than the maximum allowed offset without this exception being thrown. For example, even if there are only `*_32` member files, the archive can be larger than 2^32 - 1 bytes.
 
             - **NameLengthOverflowError**
 
-                The length of a file name is too high. The limit is 2^16 - 1 bytes, and applied to file names after UTF-8 encoding.
+                The length of a file name is too high. The limit is 2^16 - 1 bytes, and applied to file names after UTF-8 encoding. This is the limit whether or not there are any `*_64` member files.

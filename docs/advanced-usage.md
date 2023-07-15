@@ -1,13 +1,13 @@
 ## Custom zlib options
 
-For the `ZIP_32` or `ZIP_64` modes, you can customise the compression object by overriding the default `get_compressobj` parameter, which is shown below.
+For the `ZIP_32` or `ZIP_64` methods, you can customise the compression object by overriding the default `get_compressobj` parameter, which is shown below.
 
 ```python
 for zipped_chunk in stream_zip(unzipped_files(), get_compressobj=lambda: zlib.compressobj(wbits=-zlib.MAX_WBITS, level=9)):
     print(zipped_chunk)
 ```
 
-If you wish to disable compression entirely for these modes, you can pass `level=0` in the above. There is no way to customize the zlib object for `ZIP_AUTO` mode, other than passing `level` into it. See [Modes](modes.md) for details and other ways to not compress member files.
+If you wish to disable compression entirely for these methods, you can pass `level=0` in the above. There is no way to customize the zlib object for the `ZIP_AUTO` method, other than passing `level` into it. See [Methods](methods.md) for details and other ways to not compress member files.
 
 
 ## Custom chunk size

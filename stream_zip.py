@@ -375,7 +375,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
 
             return chunks, size, crc_32
 
-        for name, modified_at, perms, method, chunks in files:
+        for name, modified_at, mode, method, chunks in files:
             _method, _auto_upgrade_central_directory, _get_compress_obj = method(offset, get_compressobj)
 
             name_encoded = name.encode('utf-8')
@@ -390,7 +390,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 (modified_at.year - 1980) << 9,
             )
             external_attr = \
-                (perms << 16) | \
+                (mode << 16) | \
                 (0x10 if name_encoded[-1:] == b'/' else 0x0)  # MS-DOS directory
 
             data_func = \
