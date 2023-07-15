@@ -123,6 +123,23 @@ link = ('source.txt', datetime.now(), S_IFLNK | 0o600, ZIP_32, (b'target.txt',))
 ```
 
 
+## Directories
+
+Directories can be stored in ZIP files as empty member files whose name ends with a forward slash `/` that also have `stat.S_IFDIR` in the mode.
+
+```python
+from datetime import datetime
+from stat import S_IFDIR
+from stream_zip import ZIP_32
+
+directory = ('my-dir/', datetime.now(), S_IFDIR | 0o700, ZIP_32, ())
+```
+
+The `stat.S_IFDIR` on the file is technically optional, but is probably good practice since it will match the resulting directory after extraction. The permissions on the directory, in the above case `0o700`, are not preserved by all clients on extraction.
+
+It is not required to have a directory member file in order to have files in that directory. So this pattern is most useful to have empty directories in the ZIP.
+
+
 ## Methods
 
 Each member file is compressed with a method that must be specified in client code. See [Methods](methods.md) for an explanation of each.

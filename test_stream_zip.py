@@ -754,3 +754,148 @@ def test_7z_symbolic_link(method):
 
         with open('my-link.txt') as f:
             assert f.read() == 'Some bytes 1'
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        ZIP_32,
+        ZIP_64,
+    ],
+)
+@pytest.mark.parametrize(
+    "trailing_slash,mode,expected_mode",
+    [
+        ('', stat.S_IFDIR | 0o700, 'drwx------',),  # Documents that the mode is enough
+        ('/', stat.S_IFDIR | 0o700, 'drwx------',),
+        ('/', stat.S_IFREG | 0o700, 'drwx------',),  # Documents that trailing slash is enough
+    ],
+)
+def test_7z_empty_directory(method, trailing_slash, mode, expected_mode):
+    modified_at = datetime.now()
+    member_files = (
+        ('my-dir' + trailing_slash, modified_at, mode, method, ()),
+    )
+    zipped_chunks = stream_zip(member_files)
+
+    with \
+            TemporaryDirectory() as d, \
+            cwd(d): \
+
+        with open('test.zip', 'wb') as fp:
+            for zipped_chunk in zipped_chunks:
+                fp.write(zipped_chunk)
+
+        subprocess.run(['7z', 'e', 'test.zip'])
+
+        assert os.path.isdir('my-dir')
+        assert stat.filemode(os.lstat('my-dir').st_mode) == expected_mode
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        ZIP_32,
+        ZIP_64,
+    ],
+)
+@pytest.mark.parametrize(
+    "trailing_slash,mode,expected_mode",
+    [
+        ('', stat.S_IFDIR | 0o700, '-rwx------'),  # Documents that unzip needs the trailing slash
+        ('/', stat.S_IFDIR | 0o700, 'drwx------'),
+        ('/', stat.S_IFREG | 0o700, 'drwx------'),  # Documents that trailing slash is enough
+    ],
+)
+def test_unzip_empty_directory(method, trailing_slash, mode, expected_mode):
+    modified_at = datetime.now()
+    member_files = (
+        ('my-dir' + trailing_slash, modified_at, mode, method, ()),
+    )
+    zipped_chunks = stream_zip(member_files)
+
+    with \
+            TemporaryDirectory() as d, \
+            cwd(d): \
+
+        with open('test.zip', 'wb') as fp:
+            for zipped_chunk in zipped_chunks:
+                fp.write(zipped_chunk)
+
+        subprocess.run(['unzip', f'{d}/test.zip', '-d', d])
+
+        assert stat.filemode(os.lstat('my-dir').st_mode) == expected_mode
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        ZIP_32,
+        ZIP_64,
+    ],
+)
+@pytest.mark.parametrize(
+    "trailing_slash,mode,is_dir",
+    [
+        ('', stat.S_IFDIR | 0o700, False),  # Documents that zipfile needs the trailing slash
+        ('/', stat.S_IFDIR | 0o700, True),
+        ('/', stat.S_IFREG | 0o700, True),  # Documents that trailing slash is enough
+    ],
+)
+def test_zipfile_empty_directory(method, trailing_slash, mode, is_dir):
+    modified_at = datetime.now()
+    member_files = (
+        ('my-dir' + trailing_slash, modified_at, stat.S_IFDIR | 0o700, method, ()),
+    )
+    zipped_chunks = stream_zip(member_files)
+
+    def extracted():
+        with ZipFile(BytesIO(b''.join(zipped_chunks))) as my_zip:
+            for my_info in my_zip.infolist():
+                with my_zip.open(my_info.filename) as my_file:
+                    yield (
+                        my_info.filename,
+                        my_info.is_dir(),
+                    )
+
+    assert [('my-dir' + trailing_slash, is_dir)] == list(extracted())
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        ZIP_32,
+        ZIP_64,
+    ],
+)
+@pytest.mark.parametrize(
+    "trailing_slash,mode,expected_mode",
+    [
+        ('', stat.S_IFDIR | 0o700, '-rw-rw-r--'),  # Documents that bsdcpio needs the trailing slash and doesn't preserve perms
+        ('/', stat.S_IFDIR | 0o700, 'drwxrwxr-x'),  # Documents that bsdcpio doesn't preserve perms
+        ('/', stat.S_IFREG | 0o700, 'drwxrwxr-x'),  # Documents that trailing slash is enough and doesn't preserve perms
+    ],
+)
+def test_bsdio_empty_directory(method, trailing_slash, mode, expected_mode):
+    modified_at = datetime.now()
+    member_files = (
+        ('my-dir' + trailing_slash, modified_at, mode, method, ()),
+    )
+    zip_bytes = b''.join(stream_zip(member_files))
+
+    bsdcpio = os.getcwd() + '/libarchive-3.5.3/bsdcpio'
+    with \
+            TemporaryDirectory() as d, \
+            cwd(d), \
+            subprocess.Popen(
+                [bsdcpio, '-i'],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            ) as p:
+
+        a = p.communicate(input=zip_bytes)
+
+        subprocess.run([bsdcpio, f'{d}/test.zip', '-d', d])
+
+        assert stat.filemode(os.lstat('my-dir').st_mode) == expected_mode
