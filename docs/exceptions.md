@@ -14,7 +14,7 @@ Exceptions raised by the source iterables are passed through the `stream_zip` fu
 
           - **ZipOverflowError** (also inherits from the **OverflowError** built-in)
 
-            The size or positions of data in the ZIP are too large to store using the requested mode
+            The size or positions of data in the ZIP are too large to store using the requested method
 
             - **UncompressedSizeOverflowError**
 

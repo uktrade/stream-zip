@@ -22,8 +22,8 @@ Some understanding of ZIP files is needed to use stream-zip. A ZIP file is a col
 
 1. File name
 2. Modification time
-3. Permissions
-4. Mode (compression and metadata format)
+3. Mode (File type and permissions)
+4. Method (Compression mechanism)
 5. Binary contents
 
 stream-unzip does not offer defaults for any of these 5 properties.
@@ -35,20 +35,21 @@ A single function is exposed, `stream_zip`. This function takes an iterable of m
 
 ```python
 from datetime import datetime
+from stat import S_IFREG
 from stream_zip import ZIP_32, stream_zip
 
 member_files = (
     (
         'my-file-1.txt',     # File name
         datetime.now(),      # Modification time
-        0o600,               # Permissions - owner can read and write
+        S_IFREG | 0o600,     # Mode - regular file that owner can read and write
         ZIP_32,              # ZIP_32 has good support but limited to 4GiB
         (b'Some bytes 1',),  # Iterable of chunks of contents
     ),
     (
         'my-file-2.txt',
         datetime.now(),
-        0o600,
+        S_IFREG | 0o600,
         ZIP_32,
         (b'Some bytes 2',),
     ),
@@ -65,13 +66,14 @@ In the above example `member_files` is a tuple. However, any iterable that yield
 
 ```python
 from datetime import datetime
+from stat import S_IFREG
 from stream_zip import ZIP_32, stream_zip
 
 def member_files():
     modified_at = datetime.now()
-    perms = 0o600
-    yield ('my-file-1.txt', modified_at, perms, ZIP_32, (b'Some bytes 1',))
-    yield ('my-file-2.txt', modified_at, perms, ZIP_32, (b'Some bytes 2',))
+    mode = S_IFREG | 0o600
+    yield ('my-file-1.txt', modified_at, mode, ZIP_32, (b'Some bytes 1',))
+    yield ('my-file-2.txt', modified_at, mode, ZIP_32, (b'Some bytes 2',))
 
 zipped_chunks = stream_zip(member_files()):
 
@@ -83,11 +85,12 @@ Each iterable of binary chunks of file contents could itself be a generator.
 
 ```python
 from datetime import datetime
+from stat import S_IFREG
 from stream_zip import ZIP_32, stream_zip
 
 def member_files():
     modified_at = datetime.now()
-    perms = 0o600
+    mode = S_IFREG | 0o600
 
     def file_1_data():
         yield b'Some bytes 1'
@@ -95,8 +98,8 @@ def member_files():
     def file_2_data():
         yield b'Some bytes 2'
 
-    yield ('my-file-1.txt', modified_at, perms, ZIP_32, file_1_data())
-    yield ('my-file-2.txt', modified_at, perms, ZIP_32, file_2_data())
+    yield ('my-file-1.txt', modified_at, mode, ZIP_32, file_1_data())
+    yield ('my-file-2.txt', modified_at, mode, ZIP_32, file_2_data())
 
 zipped_chunks = stream_zip(member_files()):
 
@@ -107,9 +110,9 @@ for zipped_chunk in zipped_chunks:
 This pattern of generators is typical for stream-unzip. Depending on how the generators are defined, it allows avoiding loading all the bytes of member files into memory at once.
 
 
-## Modes
+## Methods
 
-Each member file has a mode that must be specified in client code. See [Modes](modes.md) for an explanation of each.
+Each member file is compressed with a method that must be specified in client code. See [Methods](methods.md) for an explanation of each.
 
 
 ## Limitations
