@@ -24,7 +24,7 @@ nav:
   - Usage:
     - Getting started: 'getting-started.md'
     - Advanced usage: 'advanced-usage.md'
-    - Modes: 'modes.md'
+    - Methods: 'methods.md'
     - Recipes: 'recipes.md'
     - Exceptions: 'exceptions.md'
 
