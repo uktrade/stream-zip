@@ -984,3 +984,37 @@ def test_unzip_modification_time(method, timezone, modified_at):
         subprocess.run(['unzip', f'{d}/test.zip', '-d', d], env={'TZ': timezone})
 
         assert os.path.getmtime('my_file') == int(modified_at.timestamp())
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        ZIP_32,
+        ZIP_64,
+        NO_COMPRESSION_64,
+        NO_COMPRESSION_32,
+    ],
+)
+@pytest.mark.parametrize(
+    "timezone,modified_at,expected_modified_at",
+    [
+        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123), datetime(2011, 1, 1, 2, 2, 2, 0)),
+    ],
+)
+def test_unzip_modification_time_extended_timestamps_disabled(method, timezone, modified_at, expected_modified_at):
+    member_files = (
+        ('my_file', modified_at, stat.S_IFREG | 0o600, method, ()),
+    )
+    zipped_chunks = stream_zip(member_files, extended_timestamps=False)
+
+    with \
+            TemporaryDirectory() as d, \
+            cwd(d): \
+
+        with open('test.zip', 'wb') as fp:
+            for zipped_chunk in zipped_chunks:
+                fp.write(zipped_chunk)
+
+        subprocess.run(['unzip', f'{d}/test.zip', '-d', d], env={'TZ': timezone})
+
+        assert os.path.getmtime('my_file') == expected_modified_at.timestamp()

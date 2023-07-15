@@ -41,7 +41,7 @@ def ZIP_AUTO(uncompressed_size, level=9):
     return method_compressobj
 
 
-def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj(wbits=-zlib.MAX_WBITS, level=9)):
+def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj(wbits=-zlib.MAX_WBITS, level=9), extended_timestamps=True):
 
     def evenly_sized(chunks):
         chunk = b''
@@ -398,7 +398,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 5,        # Size of extra
                 b'\x01',  # Only modification time (as opposed to also other times)
                 int(modified_at.timestamp()),
-            )
+            ) if extended_timestamps else b''
             external_attr = \
                 (mode << 16) | \
                 (0x10 if name_encoded[-1:] == b'/' else 0x0)  # MS-DOS directory
