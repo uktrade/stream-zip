@@ -4,6 +4,7 @@ import contextlib
 import os
 import stat
 import subprocess
+import zlib
 from tempfile import TemporaryDirectory
 from zipfile import ZipFile
 
@@ -17,6 +18,8 @@ from stream_zip import (
     ZIP_AUTO,
     ZIP_64,
     ZIP_32,
+    CRC32IntegrityError,
+    UncompressedSizeIntegrityError,
     CompressedSizeOverflowError,
     UncompressedSizeOverflowError,
     OffsetOverflowError,
@@ -98,6 +101,67 @@ def test_with_stream_unzip_with_no_compresion_32():
         (name, size, b''.join(chunks))
         for name, size, chunks in stream_unzip(stream_zip(files()))
     ]
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        NO_COMPRESSION_32,
+        NO_COMPRESSION_64,
+    ],
+)
+def test_with_stream_unzip_with_no_compresion_known_crc_32(method):
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    mode = stat.S_IFREG | 0o600
+
+    def files():
+        yield 'file-1', now, mode, method(20000, zlib.crc32(b'a' * 10000 + b'b' * 10000)), (b'a' * 10000, b'b' * 10000)
+        yield 'file-2', now, mode, method(2, zlib.crc32(b'c' + b'd')), (b'c', b'd')
+
+    assert [(b'file-1', 20000, b'a' * 10000 + b'b' * 10000), (b'file-2', 2, b'cd')] == [
+        (name, size, b''.join(chunks))
+        for name, size, chunks in stream_unzip(stream_zip(files()))
+    ]
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        NO_COMPRESSION_32,
+        NO_COMPRESSION_64,
+    ],
+)
+def test_with_stream_unzip_with_no_compresion_bad_crc_32(method):
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    mode = stat.S_IFREG | 0o600
+
+    def files():
+        yield 'file-1', now, mode, method(20000, zlib.crc32(b'a' * 10000 + b'b' * 10000)), (b'a' * 10000, b'b' * 10000)
+        yield 'file-1', now, mode, method(1, zlib.crc32(b'')), (b'a',)
+
+    with pytest.raises(CRC32IntegrityError):
+        for name, size, chunks in stream_unzip(stream_zip(files())):
+            pass
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        NO_COMPRESSION_32,
+        NO_COMPRESSION_64,
+    ],
+)
+def test_with_stream_unzip_with_no_compresion_bad_size(method):
+    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    mode = stat.S_IFREG | 0o600
+
+    def files():
+        yield 'file-1', now, mode, method(20000, zlib.crc32(b'a' * 10000 + b'b' * 10000)), (b'a' * 10000, b'b' * 10000)
+        yield 'file-1', now, mode, method(1, zlib.crc32(b'')), (b'',)
+
+    with pytest.raises(UncompressedSizeIntegrityError):
+        for name, size, chunks in stream_unzip(stream_zip(files())):
+            pass
 
 
 def test_with_stream_unzip_auto_small():
