@@ -11,16 +11,16 @@ _AUTO_UPGRADE_CENTRAL_DIRECTORY = object()
 _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY = object()
 
 def NO_COMPRESSION_32(offset, default_get_compressobj):
-    return _NO_COMPRESSION_32, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj
+    return _NO_COMPRESSION_32, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj, None, None
 
 def NO_COMPRESSION_64(offset, default_get_compressobj):
-    return _NO_COMPRESSION_64, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj
+    return _NO_COMPRESSION_64, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj, None, None
 
 def ZIP_32(offset, default_get_compressobj):
-    return _ZIP_32, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj
+    return _ZIP_32, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj, None, None
 
 def ZIP_64(offset, default_get_compressobj):
-    return _ZIP_64, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj
+    return _ZIP_64, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj, None, None
 
 def ZIP_AUTO(uncompressed_size, level=9):
     def method_compressobj(offset, default_get_compressobj):
@@ -37,7 +37,7 @@ def ZIP_AUTO(uncompressed_size, level=9):
         # so Python could be causing extra deflate-chunks output which could break the limit. However, couldn't
         # get output of sized 4293656841 to break the Zip32 bound of 0xffffffff here for any level, including 0
         method = _ZIP_64 if uncompressed_size > 4293656841 or offset > 0xffffffff else _ZIP_32
-        return (method, _AUTO_UPGRADE_CENTRAL_DIRECTORY, lambda: zlib.compressobj(level=level, memLevel=8, wbits=-zlib.MAX_WBITS))
+        return (method, _AUTO_UPGRADE_CENTRAL_DIRECTORY, lambda: zlib.compressobj(level=level, memLevel=8, wbits=-zlib.MAX_WBITS), None, None)
     return method_compressobj
 
 
@@ -114,7 +114,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             if offset > maximum:
                 raise exception_class()
 
-        def _zip_64_local_header_and_data(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, _get_compress_obj, chunks):
+        def _zip_64_local_header_and_data(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, uncompressed_size, crc_32, _get_compress_obj, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
@@ -177,7 +177,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 0xffffffff,   # Offset of local header - since zip64
             ), name_encoded, extra
 
-        def _zip_32_local_header_and_data(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, _get_compress_obj, chunks):
+        def _zip_32_local_header_and_data(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, uncompressed_size, crc_32, _get_compress_obj, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffff, exception_class=OffsetOverflowError)
@@ -255,7 +255,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
 
             return uncompressed_size, compressed_size, crc_32
 
-        def _no_compression_64_local_header_and_data(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, _get_compress_obj, chunks):
+        def _no_compression_64_local_header_and_data(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, uncompressed_size, crc_32, _get_compress_obj, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
@@ -314,7 +314,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             ), name_encoded, extra
 
 
-        def _no_compression_32_local_header_and_data(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, _get_compress_obj, chunks):
+        def _no_compression_32_local_header_and_data(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, uncompressed_size, crc_32, _get_compress_obj, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffff, exception_class=OffsetOverflowError)
@@ -380,7 +380,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             return chunks, size, crc_32
 
         for name, modified_at, mode, method, chunks in files:
-            _method, _auto_upgrade_central_directory, _get_compress_obj = method(offset, get_compressobj)
+            _method, _auto_upgrade_central_directory, _get_compress_obj, uncompressed_size, crc_32 = method(offset, get_compressobj)
 
             name_encoded = name.encode('utf-8')
             _raise_if_beyond(len(name_encoded), maximum=0xffff, exception_class=NameLengthOverflowError)
@@ -409,7 +409,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 _no_compression_64_local_header_and_data if _method is _NO_COMPRESSION_64 else \
                 _no_compression_32_local_header_and_data
 
-            central_directory_header_entry, name_encoded, extra = yield from data_func(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, _get_compress_obj, evenly_sized(chunks))
+            central_directory_header_entry, name_encoded, extra = yield from data_func(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, uncompressed_size, crc_32, _get_compress_obj, evenly_sized(chunks))
             central_directory_size += len(central_directory_header_signature) + len(central_directory_header_entry) + len(name_encoded) + len(extra)
             central_directory.append((central_directory_header_entry, name_encoded, extra))
 
