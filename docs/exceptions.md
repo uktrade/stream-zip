@@ -12,6 +12,18 @@ Exceptions raised by the source iterables are passed through the `stream_zip` fu
 
         Base class for errors relating to invalid arguments
 
+          - **ZipIntegrityError**
+
+            An integrity check failed
+
+            - **CRC32IntegrityError**
+
+                The CRC32 calculated from data did not match the CRC32 passed into the method
+
+            - **UncompressedSizeIntegrityError**
+
+                The uncompressed size of data did not match the uncompressed size passed into the method
+
           - **ZipOverflowError** (also inherits from the **OverflowError** built-in)
 
             The size or positions of data in the ZIP are too large to store using the requested method

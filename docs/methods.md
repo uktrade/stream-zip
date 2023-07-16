@@ -3,26 +3,30 @@
 Each member file of the ZIP is compressed with one following methods.
 
 
-## ZIP_32, NO_COMPRESSION_32
+## ZIP_32, NO_COMPRESSION_32, NO_COMPRESSION_32(uncompressed_size, crc_32)
 
 These methods are the historical standard methods for ZIP files.
 
 `ZIP_32` compresses the file by default, but it is affected the `get_compressobj` parameter to `stream_unzip`. For example, by passing `get_compressobj=lambda: zlib.compressobj(wbits=-zlib.MAX_WBITS, level=0)`, the `level=0` part would result in this file not being compressed. Its size would increase slightly due to overhead of the underlying algorithm.
 
-`NO_COMPRESSION_32` does not compress the member file, and is not affected by the `get_compressobj` parameter to `stream_unzip`. However, its entire contents is buffered in memory before output begins, and so should not be used for large files. It size does not increase - in the final ZIP file the contents of each `NO_COMPRESSION_32` member file is present byte-for-byte.
+Both `NO_COMPRESSION_32` and `NO_COMPRESSION_32(uncompressed_size, crc_32)` store the contents of the file in the ZIP uncompressed exactly as supplied, and are not affected by the `get_compressobj` parameter to `stream_unzip`.
 
-Each member file is limited to 4GiB (gibibyte). This limitation is on the uncompressed size of the data, and (if `ZIP_32`) the compressed size of the data, and how far the start of the member file is from the beginning in the final ZIP file. A `ZIP_32` or `NO_COMPRESSION_32` file can also not be later than the 65,535th member file in a ZIP. If a file only has `ZIP_32` or `NO_COMPRESSION_32` members, the entire file is a Zip32 file, and end of the final member file must be less than 4GiB from the beginning of the final ZIP. If these limits are breached, a `ZipOverflowError` will be raised.
+For `NO_COMPRESSION_32` the entire contents are buffered in memory before output begins, and so should not be used for large files. For `NO_COMPRESSION_32(uncompressed_size, crc_32)` the contents are streamed, but at the price of having to determine the uncompressed size and CRC 32 of the contents beforehand. These limitations, although awkward when writing the ZIP, allow the ZIP file to be read in a streaming way.
+
+Each member file using using one of these methods is limited to 4GiB (gibibyte). This limitation is on the uncompressed size of the data, and (if `ZIP_32`) the compressed size of the data, and how far the start of the member file is from the beginning in the final ZIP file. Also, each member file cannot be later than the 65,535th member file in a ZIP. If a file only has only these members, the entire file is a Zip32 file, and the end of the final member file must be less than 4GiB from the beginning of the final ZIP. If these limits are breached, a `ZipOverflowError` will be raised.
 
 This has very high support. You can usually assume anything that can open a ZIP file can open ZIP files with only `ZIP_32` or `NO_COMPRESSION_32` members.
 
 
-## ZIP_64, NO_COMPRESSION_64
+## ZIP_64, NO_COMPRESSION_64, NO_COMPRESSION_64(uncompressed_size, crc_32)
 
 These methods use the Zip64 extension to the original ZIP format.
 
 `ZIP_64` compresses the file by default, but it is affected the `get_compressobj` parameter to `stream_unzip`. For example, by passing `get_compressobj=lambda: zlib.compressobj(wbits=-zlib.MAX_WBITS, level=0)`, the `level=0` part would result in this file not being compressed. However, its size would increase slightly due to overhead of the underlying algorithm.
 
-`NO_COMPRESSION_64` does not compress the member file, and is not affected by the `get_compressobj` parameter to `stream_unzip`. However, its entire contents is buffered in memory before output begins, and so should not be used for large files. It size does not increase - in the final ZIP file the contents of each `NO_COMPRESSION_32` member file is present byte-for-byte.
+Both `NO_COMPRESSION_64` and `NO_COMPRESSION_64(uncompressed_size, crc_32)` store the contents of the file in the ZIP uncompressed exactly as supplied, and are not affected by the `get_compressobj` parameter to `stream_unzip`.
+
+For `NO_COMPRESSION_64` the entire contents are buffered in memory before output begins, and so should not be used for large files. For `NO_COMPRESSION_64(uncompressed_size, crc_32)` the contents are streamed, but at the price of having to determine the uncompressed size and CRC 32 of the contents beforehand. These limitations, although awkward when writing the ZIP, allow the ZIP file to be read in a streaming way.
 
 Each member file is limited to 16EiB (exbibyte). This limitation is on the uncompressed size of the data, and (if `ZIP_64`) the compressed size of the data, and how far the member starts from the beginning in the final ZIP file. If these limits are breached, a `ZipOverflowError` will be raised.
 
