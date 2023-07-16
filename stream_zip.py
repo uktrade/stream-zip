@@ -2,8 +2,8 @@ from collections import deque
 from struct import Struct
 import zlib
 
-_NO_COMPRESSION_32 = object()
-_NO_COMPRESSION_64 = object()
+_NO_COMPRESSION_BUFFERED_32 = object()
+_NO_COMPRESSION_BUFFERED_64 = object()
 _ZIP_32 = object()
 _ZIP_64 = object()
 
@@ -11,10 +11,10 @@ _AUTO_UPGRADE_CENTRAL_DIRECTORY = object()
 _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY = object()
 
 def NO_COMPRESSION_32(offset, default_get_compressobj):
-    return _NO_COMPRESSION_32, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj, None, None
+    return _NO_COMPRESSION_BUFFERED_32, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj, None, None
 
 def NO_COMPRESSION_64(offset, default_get_compressobj):
-    return _NO_COMPRESSION_64, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj, None, None
+    return _NO_COMPRESSION_BUFFERED_64, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj, None, None
 
 def ZIP_32(offset, default_get_compressobj):
     return _ZIP_32, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj, None, None
@@ -406,7 +406,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             data_func = \
                 _zip_64_local_header_and_data if _method is _ZIP_64 else \
                 _zip_32_local_header_and_data if _method is _ZIP_32 else \
-                _no_compression_64_local_header_and_data if _method is _NO_COMPRESSION_64 else \
+                _no_compression_64_local_header_and_data if _method is _NO_COMPRESSION_BUFFERED_64 else \
                 _no_compression_32_local_header_and_data
 
             central_directory_header_entry, name_encoded, extra = yield from data_func(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, uncompressed_size, crc_32, _get_compress_obj, evenly_sized(chunks))
@@ -416,7 +416,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             zip_64_central_directory = zip_64_central_directory \
                 or (_auto_upgrade_central_directory is _AUTO_UPGRADE_CENTRAL_DIRECTORY and offset > 0xffffffff) \
                 or (_auto_upgrade_central_directory is _AUTO_UPGRADE_CENTRAL_DIRECTORY and len(central_directory) > 0xffff) \
-                or _method in (_ZIP_64, _NO_COMPRESSION_64)
+                or _method in (_ZIP_64, _NO_COMPRESSION_BUFFERED_64)
 
             max_central_directory_length, max_central_directory_start_offset, max_central_directory_size = \
                 (0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff) if zip_64_central_directory else \
