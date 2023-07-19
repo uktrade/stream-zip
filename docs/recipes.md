@@ -9,6 +9,7 @@ stream-zip takes as input one or more member files as an iterable of tuples, and
 
 ```python
 from datetime import datetime
+from stat import S_IFREG
 from stream_zip import ZIP_32, stream_zip
 
 def local_files(names):
@@ -20,7 +21,7 @@ def local_files(names):
                 yield chunk
 
     return (
-        (name, now, 0o600, ZIP_32, contents(name))
+        (name, now, S_IFREG | 0o600, ZIP_32, contents(name))
         for name in names
     )
 
