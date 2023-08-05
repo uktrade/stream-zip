@@ -36,12 +36,6 @@ You should not fork the repository if you're a member of uktrade.
 
 1. [Setup an SSH key and associate it with your GitHub account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account).
 
-2. Clone the repository.
-
-    ```bash
-    git clone git@github.com:/stream-zip.git
-    cd stream-zup
-    ```
 
 2. [Fork the repository](https://github.com/uktrade/stream-zip/fork). Make a note of the "Owner" that you fork to. This is usually your username.
 
