@@ -26,19 +26,16 @@ jobs:
     strategy:
       matrix:
         include:
-          # 3.7.1 is the earliest Python version available in actions/setup-python
+          - python-version: "3.6.7"
+            os: "ubuntu-20.04"
           - python-version: "3.7.1"
             os: "ubuntu-20.04"
-          - python-version: "3.7"
-            os: "ubuntu-latest"
           - python-version: "3.8.0"
             os: "ubuntu-20.04"
-          - python-version: "3.8"
-            os: "ubuntu-latest"
           - python-version: "3.9.0"
             os: "ubuntu-20.04"
-          - python-version: "3.9"
-            os: "ubuntu-latest"
+          - python-version: "3.10.0"
+            os: "ubuntu-20.04"
     runs-on: ${{ matrix.os }}
     steps:
       - name: "Checkout"
@@ -85,5 +82,5 @@ jobs:
         run: |
           ls -R
           chmod +x ./reporter/cc-test-reporter
-          ./reporter/cc-test-reporter sum-coverage ./coverage/*.json -p 6
+          ./reporter/cc-test-reporter sum-coverage ./coverage/*.json -p 5
           ./reporter/cc-test-reporter upload-coverage
