@@ -28,7 +28,9 @@ jobs:
 
   pypi-publish:
     needs: ['build']
-    environment: 'publish-pypi'
+    environment:
+      name: publish-pypi
+      url: https://pypi.org/project/stream-zip/
 
     name: upload release to PyPI
     runs-on: ubuntu-latest
