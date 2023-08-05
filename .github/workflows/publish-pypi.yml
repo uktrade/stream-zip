@@ -26,10 +26,10 @@ jobs:
         with:
           path: ./dist
 
-  pypi-publish:
-    needs: ['build']
+  deploy:
+    needs: [build]
     environment:
-      name: publish-pypi
+      name: pypi
       url: https://pypi.org/project/stream-zip/
 
     name: upload release to PyPI
