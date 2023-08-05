@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "stream-zip"
+version = "0.0.0.dev0"
+authors = [
+  { name="Department for International Trade", email="sre@digital.trade.gov.uk" },
+]
+description = "Python function to construct a ZIP archive with stream processing - without having to store the entire ZIP in memory or disk"
+readme = "README.md"
+requires-python = ">=3.7.1"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: System :: Archiving :: Compression",
+]
+
+[project.optional-dependencies]
+dev = [
+    "coverage>=6.2",
+    "pytest>=7.2.0",
+    "pytest-cov>=3.0.0",
+    "stream-unzip>=0.0.86"
+]
+ci = [
+    "coverage==6.2",
+    "pytest==7.2.0",
+    "pytest-cov==3.0.0",
+    "stream-unzip==0.0.86"
+]
+
+[project.urls]
+"Documentation" = "https://stream-zip.docs.trade.gov.uk/"
+"Source" = "https://github.com/uktrade/stream-zip"
+
+[tool.hatch.build]
+include = [
+  "stream_zip.py",
+]

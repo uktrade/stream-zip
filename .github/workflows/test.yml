@@ -56,7 +56,7 @@ jobs:
           ./install-libarachive.sh
       - name: "Install python dependencies"
         run: |
-          pip install -r requirements-dev.txt
+          pip install ".[ci]"
           chmod +x ./reporter/cc-test-reporter
       - name: "Notify code climate of pending coverage upload"
         env:
