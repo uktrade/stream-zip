@@ -48,7 +48,7 @@ def gen_bytes(num):
 
 
 def test_with_stream_unzip_zip_64():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -62,7 +62,7 @@ def test_with_stream_unzip_zip_64():
 
 
 def test_with_stream_unzip_zip_32():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -76,7 +76,7 @@ def test_with_stream_unzip_zip_32():
 
 
 def test_with_stream_unzip_zip_32_and_zip_64():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -90,7 +90,7 @@ def test_with_stream_unzip_zip_32_and_zip_64():
 
 
 def test_with_stream_unzip_with_no_compresion_32():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -111,7 +111,7 @@ def test_with_stream_unzip_with_no_compresion_32():
     ],
 )
 def test_with_stream_unzip_with_no_compresion_known_crc_32(method):
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -132,7 +132,7 @@ def test_with_stream_unzip_with_no_compresion_known_crc_32(method):
     ],
 )
 def test_with_stream_unzip_with_no_compresion_bad_crc_32(method):
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -152,7 +152,7 @@ def test_with_stream_unzip_with_no_compresion_bad_crc_32(method):
     ],
 )
 def test_with_stream_unzip_with_no_compresion_bad_size(method):
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -165,7 +165,7 @@ def test_with_stream_unzip_with_no_compresion_bad_size(method):
 
 
 def test_with_stream_unzip_auto_small():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -186,7 +186,7 @@ def test_with_stream_unzip_auto_small():
     ],
 )
 def test_with_stream_unzip_at_zip_32_limit(level):
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -206,7 +206,7 @@ def test_with_stream_unzip_at_zip_32_limit(level):
     ],
 )
 def test_with_stream_unzip_above_zip_32_size_limit(level):
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -222,7 +222,7 @@ def test_with_stream_unzip_above_zip_32_size_limit(level):
 
 
 def test_with_stream_unzip_above_zip_32_offset_limit():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -254,7 +254,7 @@ def test_with_stream_unzip_above_zip_32_offset_limit():
 
 
 def test_with_stream_unzip_large_easily_compressible():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
     batch = b'-' * 500000
 
@@ -274,7 +274,7 @@ def test_with_stream_unzip_large_easily_compressible():
 
 
 def test_with_stream_unzip_large_not_easily_compressible_with_no_compression_64():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
     batch = os.urandom(500000)
 
@@ -295,7 +295,7 @@ def test_with_stream_unzip_large_not_easily_compressible_with_no_compression_64(
 
 
 def test_with_stream_unzip_large_not_easily_compressible_with_no_compression_32():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
     batch = os.urandom(500000)
 
@@ -314,7 +314,7 @@ def test_with_stream_unzip_large_not_easily_compressible_with_no_compression_32(
 
 
 def test_with_stream_unzip_large_not_easily_compressible_with_zip_32():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = 0o600
     batch = os.urandom(500000)
 
@@ -333,7 +333,7 @@ def test_with_stream_unzip_large_not_easily_compressible_with_zip_32():
 
 
 def test_zip_overflow_large_not_easily_compressible():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
     batch = os.urandom(500000)
 
@@ -350,7 +350,7 @@ def test_zip_overflow_large_not_easily_compressible():
 
 
 def test_zip_overflow_large_easily_compressible():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
     batch = b'-' * 1000000
 
@@ -367,7 +367,7 @@ def test_zip_overflow_large_easily_compressible():
 
 
 def test_with_zipfile_zip_64():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -402,7 +402,7 @@ def test_with_zipfile_zip_64():
 
 
 def test_with_zipfile_zip_32():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -437,7 +437,7 @@ def test_with_zipfile_zip_32():
 
 
 def test_with_zipfile_zip_32_and_zip_64():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -472,7 +472,7 @@ def test_with_zipfile_zip_32_and_zip_64():
 
 
 def test_with_zipfile_without_compression():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -507,7 +507,7 @@ def test_with_zipfile_without_compression():
 
 
 def test_with_zipfile_many_files_zip_64():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -533,7 +533,7 @@ def test_with_zipfile_no_files():
 
 
 def test_too_many_files_for_zip_32_raises_exception_in_zip_32_mode():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -546,7 +546,7 @@ def test_too_many_files_for_zip_32_raises_exception_in_zip_32_mode():
 
 
 def test_too_many_files_for_zip_32_no_exception_in_auto_mode():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -563,7 +563,7 @@ def test_too_many_files_for_zip_32_no_exception_in_auto_mode():
 
 
 def test_central_directory_size_overflow():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -576,7 +576,7 @@ def test_central_directory_size_overflow():
 
 
 def test_directory_zipfile():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -611,7 +611,7 @@ def test_directory_zipfile():
 
 
 def test_with_unzip_zip64():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -640,7 +640,7 @@ def test_with_unzip_zip64():
 
 
 def test_with_unzip_zip_32_and_zip_64():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -669,7 +669,7 @@ def test_with_unzip_zip_32_and_zip_64():
 
 
 def test_with_unzip_with_no_compression_32():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -698,7 +698,7 @@ def test_with_unzip_with_no_compression_32():
 
 
 def test_name_length_overflow():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -710,7 +710,7 @@ def test_name_length_overflow():
 
 
 def test_exception_propagates():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -723,7 +723,7 @@ def test_exception_propagates():
 
 
 def test_exception_from_bytes_propagates():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def data():
@@ -739,7 +739,7 @@ def test_exception_from_bytes_propagates():
 
 
 def test_chunk_sizes():
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
@@ -764,7 +764,7 @@ def test_chunk_sizes():
 def test_bsdcpio(method):
     assert method in (ZIP_32, ZIP_64)  # Paranoia check that parameterisation works
 
-    now = datetime.fromisoformat('2021-01-01 21:01:12')
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
     zip_bytes = b''.join(stream_zip((
         ('file-1', now, mode, method, (b'contents',)),
