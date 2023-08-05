@@ -27,7 +27,8 @@ nav:
     - Getting started: 'getting-started.md'
     - Advanced usage: 'advanced-usage.md'
     - Methods: 'methods.md'
-    - Recipes: 'recipes.md'
+    - Input examples: 'input-examples.md'
+    - Output examples: 'output-examples.md'
     - Exceptions: 'exceptions.md'
 
   - Contributing:
