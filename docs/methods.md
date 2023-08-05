@@ -1,9 +1,13 @@
 # Methods
 
-Each member file of the ZIP is compressed with one following methods.
+Each member file of a ZIP is compressed with one of the below methods.
 
 
-## ZIP_32, NO_COMPRESSION_32, NO_COMPRESSION_32(uncompressed_size, crc_32)
+## The *_32 methods
+
+- `ZIP_32`
+- `NO_COMPRESSION_32`
+- `NO_COMPRESSION_32(uncompressed_size, crc_32)`
 
 These methods are the historical standard methods for ZIP files.
 
@@ -18,7 +22,11 @@ Each member file using using one of these methods is limited to 4GiB (gibibyte).
 This has very high support. You can usually assume anything that can open a ZIP file can open ZIP files with only `ZIP_32` or `NO_COMPRESSION_32` members.
 
 
-## ZIP_64, NO_COMPRESSION_64, NO_COMPRESSION_64(uncompressed_size, crc_32)
+## The *_64 methods
+
+- `ZIP_64`
+- `NO_COMPRESSION_64`
+- `NO_COMPRESSION_64(uncompressed_size, crc_32)`
 
 These methods use the Zip64 extension to the original ZIP format.
 
@@ -36,7 +44,9 @@ Support is limited to newer clients. However, at the time of writing there are t
 - [Java's ZipInputStream will fail on Zip64 files in some cases.](https://bugs.openjdk.org/browse/JDK-8298530)
 - [MacOS Safari's default auto extract behaviour only extracts the first member of a ZIP if that first member is Zip64, and effectively deletes the others.](https://github.com/uktrade/stream-zip/pull/42) This means that in most cases, if your ZIP file is to be made available via download from web pages, and if it has more than one member file, the first member file should never be `ZIP_64` or `NO_COMPRESSION_64`. Instead, use `ZIP_32` or `NO_COMPRESSION_32`.
 
-## ZIP_AUTO(uncompressed_size, level=9)
+## The ZIP_AUTO method
+
+`ZIP_AUTO(uncompressed_size, level=9)`
 
 This dynamic method chooses `ZIP_32` if it is sure a `ZipOverflowError` won't occur with its lower limits, but chooses `ZIP_64` otherwise. It uses the required parameter of `uncompressed_size`, as well as other more under the hood details, such as how far the member file would appear from the start of the ZIP file.
 

@@ -24,7 +24,7 @@ This one size is used both for input - splitting or gathering any uncompressed d
 There may be performance differences with a different `chunk_size` values. The default chunk_size may not be optimal for your use case.
 
 
-## Without extended timestamps
+## Extended timestamps
 
 By default so-called extended timestamps are included in the ZIP, which store the modification time of member files more accurately than the original ZIP format allows. To omit the extended timestamps, you can pass `extended_timestamps=False` to `stream_zip`.
 
