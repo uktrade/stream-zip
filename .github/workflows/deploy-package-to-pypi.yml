@@ -1,3 +1,5 @@
+name: Deploy package to PyPI
+
 on:
   release:
     types: [published]
@@ -14,7 +16,7 @@ jobs:
 
       - name: Update version in pyproject.toml from current git tag
         run: >-
-          sed -i "s/0\\.0\\.0\\.dev0/${GITHUB_REF/refs\/tags\/v/}/g" setup.py
+          sed -i "s/0\\.0\\.0\\.dev0/${GITHUB_REF/refs\/tags\/v/}/g" pyproject.toml
 
       - run: |
           pip install build
