@@ -1,3 +1,5 @@
+name: Deploy package to PyPI
+
 on:
   release:
     types: [published]
