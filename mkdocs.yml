@@ -7,7 +7,7 @@ theme:
   favicon: assets/dit-favicon.png
   features:
     - content.code.copy
-    - navigation.sectionsa
+    - navigation.sections
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
@@ -17,6 +17,8 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.superfences
   - pymdownx.snippets
+  - toc:
+      toc_depth : "2"
 plugins:
   - material/search
 nav:

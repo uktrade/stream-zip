@@ -3,24 +3,23 @@
 In most cases to contribute you will need a [GitHub account](https://github.com/join).
 
 
-## Contributing an issue
+## Issues
 
 Suspected issues with stream-zip can be submitted at [the stream-unzip Issues page](https://github.com/uktrade/stream-zip/issues).
 
 An issue that contains a [minimal, reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) stands the best chance of being resolved. However, it is understood that this is not possible in all circumstances.
 
 
-## Contributing a feature request
+## Feature requests
 
 A feature request can be submitted using the [Ideas category in the stream-zip discussions](https://github.com/uktrade/stream-zip/discussions/categories/ideas).
 
 
-## Contributing documentation or code
+## Documentation or code
 
 To contribute changes to documentation or code, you will need the source of stream-unzip locally. The instructions for this depend on if you are a member of the [uktrade GitHub organisation](https://github.com/uktrade). In both cases, experience of working with source code, working on the command line, and working with git is helpful.
 
-
-### If you're a member of uktrade
+### If a member of uktrade
 
 1. [Setup an SSH key and associate it with your GitHub account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account)
 
@@ -33,7 +32,7 @@ To contribute changes to documentation or code, you will need the source of stre
 
 You should not fork the repository if you're a member of uktrade.
 
-### If you're not a member of uktrade
+### If not a member of uktrade
 
 1. [Setup an SSH key and associate it with your GitHub account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account).
 
@@ -55,7 +54,7 @@ You should not fork the repository if you're a member of uktrade.
     cd stream-zup
     ```
 
-## Contributing documentation
+## Documentation
 
 The source of the documentation is in the [docs/](https://github.com/uktrade/stream-zip/tree/main/docs) directory of the source code, and is written using [Material for mkdocs](https://squidfunk.github.io/mkdocs-material/).
 
@@ -94,7 +93,7 @@ Changes are then submitted via a Pull Request (PR). To do this:
 When the PR is merged, the documentation is deployed automatically to [https://stream-zip.docs.trade.gov.uk/](https://stream-zip.docs.trade.gov.uk/).
 
 
-## Contributing code
+## Code
 
 To contribute most code changes:
 
