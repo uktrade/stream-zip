@@ -1,7 +1,7 @@
 <!-- --8<-- [start:intro] -->
 # stream-zip
 
-[![PyPI version](https://badge.fury.io/py/stream-zip.svg)](https://pypi.org/project/stream-zip/) [![Tests](https://github.com/uktrade/stream-zip/actions/workflows/test.yml/badge.svg)](https://github.com/uktrade/stream-zip/actions/workflows/test.yml) [![Test Coverage](https://api.codeclimate.com/v1/badges/80442ee55a1276e83b44/test_coverage)](https://codeclimate.com/github/uktrade/stream-zip/test_coverage)
+[![PyPI package](https://img.shields.io/pypi/v/stream-zip?label=PyPI%20package&color=%234c1)](https://pypi.org/project/stream-zip/) [![Test suite](https://img.shields.io/github/actions/workflow/status/uktrade/stream-zip/test.yml?label=Test%20suite)](https://github.com/uktrade/stream-zip/actions/workflows/test.yml) [![Code coverage](https://img.shields.io/codecov/c/github/uktrade/stream-zip?label=Code%20coverage)](https://app.codecov.io/gh/uktrade/stream-zip)
 
 Python function to construct a ZIP archive on the fly - without having to store the entire ZIP in memory or disk. This is useful in memory-constrained environments, or when you would like to start returning compressed data before you've even retrieved all the uncompressed data. Generating ZIPs on-demand in a web server is a typical use case for stream-zip.
 
