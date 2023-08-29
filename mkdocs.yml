@@ -29,6 +29,7 @@ nav:
     - Methods: 'methods.md'
     - Input examples: 'input-examples.md'
     - Output examples: 'output-examples.md'
+    - Async interface: 'async-interface.md'
     - Exceptions: 'exceptions.md'
 
   - Contributing:
