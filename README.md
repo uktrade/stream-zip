@@ -13,7 +13,7 @@ To unZIP files on the fly try [stream-unzip](https://github.com/uktrade/stream-u
 <!-- --8<-- [start:features] -->
 ## Features
 
-In addition to being memory efficient (with some [limitations](https://stream-zip.docs.trade.gov.uk/getting-started/#limitations)) stream-zip:
+In addition to being memory efficient (with some [limitations](https://stream-zip.docs.trade.gov.uk/get-started/#limitations)) stream-zip:
 
 - Constructs ZIP files that can be stream unzipped, for example by [stream-unzip](https://stream-unzip.docs.trade.gov.uk/)
 
