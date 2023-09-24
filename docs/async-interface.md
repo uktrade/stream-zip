@@ -1,4 +1,9 @@
-# Async Interface
+---
+layout: sub-navigation
+order: 7
+title: Async interface
+---
+
 
 stream-zip does not include an async interface. However, it is possible to construct an async function that wraps stream-zip to allow the construction of zip files in a streaming way from async code without blocking the event loop.
 

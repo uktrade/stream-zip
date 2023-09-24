@@ -1,4 +1,9 @@
-# Methods
+---
+layout: sub-navigation
+order: 4
+title: Methods
+---
+
 
 Each member file of a ZIP is compressed with one of the below methods.
 

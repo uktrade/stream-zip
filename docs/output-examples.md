@@ -1,8 +1,13 @@
-# Output examples
+---
+layout: sub-navigation
+order: 6
+title: Output examples
+---
+
 
 This page contains examples to show how the output of stream-zip can be manipulated for different cases. It is likely you will have to modifiy them for your specific needs.
 
-The examples assume an iterable of member files is available in the variable `member_files`. See [Getting started](getting-started.md) for a guide on how to construct this, or [Input examples](input-examples.md) for examples.
+The examples assume an iterable of member files is available in the variable `member_files`. See [Get started](/get-started/) for a guide on how to construct this, or [Input examples](/input-examples/) for examples.
 
 
 ## Local file
@@ -83,4 +88,4 @@ s3.upload_fileobj(
 
 ## Submit your own
 
-Pull requests (PRs) that propose changes to this page are especially welcome. PRs can be made at the [source of this page](https://github.com/uktrade/stream-zip/blob/main/docs/recipes.md). Submitting a PR requires a [GitHub account](https://github.com/join) and knowledge of the [GitHub fork and PR process](https://docs.github.com/en/pull-requests).
+Pull requests (PRs) that propose changes to this page are especially welcome. PRs can be made at the [source of this page](https://github.com/uktrade/stream-zip/blob/main/docs/output-examples.md). Submitting a PR requires a [GitHub account](https://github.com/join) and knowledge of the [GitHub fork and PR process](https://docs.github.com/en/pull-requests).
