@@ -26,37 +26,11 @@ with open('my.zip', 'wb') as f:
 
 ## File-like object
 
-If you need to output a file-like object rather than an iterable yielding bytes, you can pass the return value of `stream_zip` through `to_file_like_obj` defined as below.
+If you need to output a file-like object rather than an iterable yielding bytes, you can pass the return value of `stream_zip` through the `to_file_like_obj` function from [to-file-like-obj](https://github.com/uktrade/to-file-like-obj).
 
 ```python
 from stream_zip import stream_zip
-
-def to_file_like_obj(iterable):
-    chunk = b''
-    offset = 0
-    it = iter(iterable)
-
-    def up_to_iter(size):
-        nonlocal chunk, offset
-
-        while size:
-            if offset == len(chunk):
-                try:
-                    chunk = next(it)
-                except StopIteration:
-                    break
-                else:
-                    offset = 0
-            to_yield = min(size, len(chunk) - offset)
-            offset = offset + to_yield
-            size -= to_yield
-            yield chunk[offset - to_yield:offset]
-
-    class FileLikeObj:
-        def read(self, size=-1):
-            return b''.join(up_to_iter(float('inf') if size is None or size < 0 else size))
-
-    return FileLikeObj()
+from to_file_like_obj import to_file_like_obj
 
 zipped_chunks = stream_zip(member_files)
 zipped_chunks_obj = to_file_like_obj(zipped_chunks)
@@ -65,12 +39,13 @@ zipped_chunks_obj = to_file_like_obj(zipped_chunks)
 
 ## Upload to S3
 
-The file-like object above can be used to upload large ZIP files to S3 using [boto3's upload_fileobj](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_fileobj), which splits larger files into multipart uploads.
+The `to_file_like_obj` function from [to-file-like-obj](https://github.com/uktrade/to-file-like-obj) can be used to upload large ZIP files to S3 with [boto3's upload_fileobj](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_fileobj).
 
 ```python
 import boto3
 from boto3.s3.transfer import TransferConfig
 from stream_zip import stream_zip
+from to_file_like_obj import to_file_like_obj
 
 zipped_chunks = stream_zip(member_files)
 zipped_chunks_obj = to_file_like_obj(zipped_chunks)
