@@ -16,19 +16,25 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Topic :: System :: Archiving :: Compression",
 ]
+dependencies = [
+    "pycryptodome>=3.10.1",
+]
 
 [project.optional-dependencies]
 dev = [
     "coverage>=6.2",
     "pytest>=7.0.1",
     "pytest-cov>=3.0.0",
-    "stream-unzip>=0.0.86"
+    "stream-unzip>=0.0.86",
+    "pyzipper>=0.3.6",
 ]
 ci = [
+    "pycryptodome==3.10.1",
     "coverage==6.2",
     "pytest==7.0.1",
     "pytest-cov==3.0.0",
-    "stream-unzip==0.0.86"
+    "stream-unzip==0.0.86",
+    "pyzipper==0.3.6",
 ]
 
 [project.urls]

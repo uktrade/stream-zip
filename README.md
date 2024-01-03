@@ -23,6 +23,8 @@ In addition to being memory efficient (with some [limitations](https://stream-zi
 
 - Can construct ZIP files that contain directories, including empty directories
 
+- Can construct password protected/encrypted ZIP files adhering to the [WinZip AE-2 specification](https://www.winzip.com/en/support/aes-encryption/).
+
 - Allows the specification of permissions on the member files and directories (although not all clients respect them)
 
 - By default stores modification time as an extended timestamp. An extended timestamp is a more accurate timestamp than the original ZIP format allows
