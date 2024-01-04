@@ -147,26 +147,6 @@ The `stat.S_IFDIR` on the file is technically optional, but is probably good pra
 It is not required to have a directory member file in order to have files in that directory. So this pattern is most useful to have empty directories in the ZIP.
 
 
-## Password protection / encryption
-
-The data of ZIP files can be password protected / encrypted by passing a password as the `password` parameter to `stream_zip`.
-
-```python
-import secrets
-
-password = secrets.token_urlsafe(32)
-encrypted_zipped_chunks = stream_zip(member_files(), password=password)
-```
-
-Notes:
-
-1. This encrypts the data with AES-256, adhering to the [WinZip AE-2 specification](https://www.winzip.com/en/support/aes-encryption/).
-
-2. This is seen as more secure than ZipCrypto, the original mechanism of password protecting ZIP files, but fewer clients can open such ZIP files.
-
-3. While a step forward from ZipCrypto, it has flaws that you should be aware of before using it. See ["Attacking and Repairing the WinZip Encryption Scheme" by Tadayoshi Kohno](https://homes.cs.washington.edu/~yoshi/papers/WinZip/winzip.pdf) and [fgrieu's answer to a question about WinZip's AE-1 and AE-2 on Crytography Stack Exchange](https://crypto.stackexchange.com/a/109269/113464).
-
-
 ## Methods
 
 Each member file is compressed with a method that must be specified in client code. See [Methods](/methods/) for an explanation of each.
