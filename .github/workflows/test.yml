@@ -34,6 +34,17 @@ jobs:
       - name: "Install bsdcpio"
         run: |
           ./install-libarachive.sh
+      - name: "Install 7z"
+        run: |
+          mkdir bin
+          (
+            cd ./bin
+            wget https://www.7-zip.org/a/7z2301-linux-x64.tar.xz
+            echo "23babcab045b78016e443f862363e4ab63c77d75bc715c0b3463f6134cbcf318 7z2301-linux-x64.tar.xz" | sha256sum --check
+            tar -xJf ./7z2301-linux-x64.tar.xz 7zz
+            rm 7z2301-linux-x64.tar.xz
+            echo "$PWD" >> $GITHUB_PATH
+          )
       - name: "Install python dependencies"
         run: |
           pip install ".[ci]"

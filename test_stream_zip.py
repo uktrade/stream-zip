@@ -6,10 +6,12 @@ import stat
 import subprocess
 import zlib
 from tempfile import TemporaryDirectory
+from struct import Struct
 from zipfile import ZipFile
 
 import pytest
-from stream_unzip import UnsupportedZip64Error, stream_unzip
+import pyzipper
+from stream_unzip import IncorrectAESPasswordError, UnsupportedZip64Error, stream_unzip
 
 from stream_zip import (
     stream_zip,
@@ -1082,3 +1084,192 @@ def test_unzip_modification_time_extended_timestamps_disabled(method, timezone, 
         subprocess.run(['unzip', f'{d}/test.zip', '-d', d], env={'TZ': timezone})
 
         assert os.path.getmtime('my_file') == expected_modified_at.timestamp()
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        ZIP_32,
+        ZIP_64,
+        NO_COMPRESSION_64,
+        NO_COMPRESSION_64(18, 1571107898),
+        NO_COMPRESSION_32,
+        NO_COMPRESSION_32(18, 1571107898),
+    ],
+)
+def test_password_unzips_with_stream_unzip(method):
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
+    mode = stat.S_IFREG | 0o600
+    password = 'my-pass'
+
+    files = (
+        ('file-1', now, mode, method, (b'a' * 9, b'b' * 9)),
+    )
+
+    assert b''.join(
+        chunk
+        for _, _, chunks in stream_unzip(stream_zip(files, password=password), password=password)
+        for chunk in chunks
+    ) == b'a' * 9 + b'b' * 9
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        ZIP_32,
+        ZIP_64,
+        NO_COMPRESSION_64,
+        NO_COMPRESSION_64(18, 1571107898),
+        NO_COMPRESSION_32,
+        NO_COMPRESSION_32(18, 1571107898),
+    ],
+)
+def test_bad_password_not_unzips_with_stream_unzip(method):
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
+    mode = stat.S_IFREG | 0o600
+    password = 'my-pass'
+
+    files = (
+        ('file-1', now, mode, method, (b'a' * 9, b'b' * 9)),
+    )
+
+    with pytest.raises(IncorrectAESPasswordError):
+        list(stream_unzip(stream_zip(files, password=password), password='not'))
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        ZIP_32,
+        ZIP_64,
+        NO_COMPRESSION_64,
+        NO_COMPRESSION_64(18, 1571107898),
+        NO_COMPRESSION_32,
+        NO_COMPRESSION_32(18, 1571107898),
+    ],
+)
+def test_password_unzips_with_7z(method):
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
+    mode = stat.S_IFREG | 0o600
+    password = 'my-pass'
+
+    files = (
+        ('file-1', now, mode, method, (b'a' * 9, b'b' * 9)),
+    )
+
+    with \
+            TemporaryDirectory() as d, \
+            cwd(d): \
+
+        with open('test.zip', 'wb') as fp:
+            for zipped_chunk in stream_zip(files, password=password):
+                fp.write(zipped_chunk)
+
+        r = subprocess.run(['7zz', '-pmy-pass', 'e', 'test.zip'])
+        assert r.returncode == 0
+
+        for file in files:
+            with open(file[0], 'rb') as f:
+                assert f.read() == (b'a' * 9 ) + (b'b' * 9)
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        ZIP_32,
+        ZIP_64,
+        NO_COMPRESSION_64,
+        NO_COMPRESSION_64(18, 1571107898),
+        NO_COMPRESSION_32,
+        NO_COMPRESSION_32(18, 1571107898),
+    ],
+)
+def test_password_unzips_with_pyzipper(method):
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
+    mode = stat.S_IFREG | 0o600
+    password = 'my-pass'
+
+    files = (
+        ('file-1', now, mode, method, (b'a' * 9, b'b' * 9)),
+    )
+
+    with \
+            TemporaryDirectory() as d, \
+            cwd(d): \
+
+        with open('test.zip', 'wb') as fp:
+            for zipped_chunk in stream_zip(files, password=password):
+                fp.write(zipped_chunk)
+
+        with pyzipper.AESZipFile('test.zip') as zf:
+            zf.setpassword(password.encode())
+            zf.testzip()
+            assert zf.read('file-1') == (b'a' * 9 ) + (b'b' * 9)
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        ZIP_32,
+        ZIP_64,
+        NO_COMPRESSION_64,
+        NO_COMPRESSION_64(18, 1571107898),
+        NO_COMPRESSION_32,
+        NO_COMPRESSION_32(18, 1571107898),
+    ],
+)
+def test_password_bytes_not_deterministic(method):
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
+    mode = stat.S_IFREG | 0o600
+    password = 'my-pass'
+
+    files = (
+        ('file-1', now, mode, method, (b'a' * 9, b'b' * 9)),
+    )
+
+    assert b''.join(stream_zip(files, password=password)) != b''.join(stream_zip(files, password=password))
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        ZIP_32,
+        ZIP_64,
+        NO_COMPRESSION_64,
+        NO_COMPRESSION_64(18, 1571107898),
+        NO_COMPRESSION_32,
+        NO_COMPRESSION_32(18, 1571107898),
+    ],
+)
+def test_crc_32_not_in_file(method):
+    # AE-2 should not have the CRC_32, so we check that the CRC_32 isn't anywhere in the file. This
+    # is "too strong" as check, because it could just happen to appear in the cipher text, which
+    # would be fine. The cipher text is by default non-deterministic due to its random salt, and
+    # so this could be a flaky test and faily randomly. To make the test not flaky, we make the
+    # bytes of the file completely deterministic, by forcing the random numbers used to generate
+    # the salt to be non-random
+
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
+    mode = stat.S_IFREG | 0o600
+    password = 'my-pass'
+
+    files = (
+        ('file-1', now, mode, method, (b'a' * 9, b'b' * 9)),
+    )
+    crc_32 = Struct('<I').pack(1571107898)
+
+    # To make sure we've got the correct CRC_32...
+    assert crc_32 in b''.join(stream_zip(files))
+
+    # ... to assert on the lack of it if we're using a password
+    encrypted_bytes = b''.join(stream_zip(files, password=password, get_crypto_random=lambda num_bytes: b'-' * num_bytes))
+    assert crc_32 not in encrypted_bytes
+
+    # ... and we can just out of paranoia check check substrings of it are not in the file, in case
+    # somehow we're leaking part of it. It's not perfect, but it's probably the best we can do
+    # and will catch the most likely cases of just not enabling the logic to hide it
+    assert crc_32[0:2] not in encrypted_bytes
+    assert crc_32[1:3] not in encrypted_bytes
+    assert crc_32[2:4] not in encrypted_bytes
+    assert crc_32[0:3] not in encrypted_bytes
+    assert crc_32[1:4] not in encrypted_bytes

@@ -1,6 +1,12 @@
 from collections import deque
 from struct import Struct
+import secrets
 import zlib
+
+from Crypto.Cipher import AES
+from Crypto.Hash import HMAC, SHA1
+from Crypto.Util import Counter
+from Crypto.Protocol.KDF import PBKDF2
 
 # Private methods
 
@@ -63,7 +69,12 @@ def ZIP_AUTO(uncompressed_size, level=9):
     return method_compressobj
 
 
-def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj(wbits=-zlib.MAX_WBITS, level=9), extended_timestamps=True):
+def stream_zip(files, chunk_size=65536,
+               get_compressobj=lambda: zlib.compressobj(wbits=-zlib.MAX_WBITS, level=9),
+               extended_timestamps=True,
+               password=None,
+               get_crypto_random=lambda num_bytes: secrets.token_bytes(num_bytes),
+):
 
     def evenly_sized(chunks):
         chunk = b''
@@ -94,14 +105,14 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
 
     def get_zipped_chunks_uneven():
         local_header_signature = b'PK\x03\x04'
-        local_header_struct = Struct('<H2sH4sIIIHH')
+        local_header_struct = Struct('<HHH4sIIIHH')
 
         data_descriptor_signature = b'PK\x07\x08'
         data_descriptor_zip_64_struct = Struct('<IQQ')
         data_descriptor_zip_32_struct = Struct('<III')
 
         central_directory_header_signature = b'PK\x01\x02'
-        central_directory_header_struct = Struct('<BBBB2sH4sIIIHHHHHII')
+        central_directory_header_struct = Struct('<BBBBHH4sIIIHHHHHII')
 
         zip_64_end_of_central_directory_signature = b'PK\x06\x06'
         zip_64_end_of_central_directory_struct = Struct('<QHHIIQQQQ')
@@ -119,7 +130,14 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
         mod_at_unix_extra_signature = b'UT'
         mod_at_unix_extra_struct = Struct('<2sH1sl')
 
+        aes_extra_signature = b'\x01\x99'
+        aes_extra_struct = Struct('<2sHH2sBH')
+
         modified_at_struct = Struct('<HH')
+
+        aes_flag = 0b0000000000000001
+        data_descriptor_flag = 0b0000000000001000
+        utf8_flag = 0b0000100000000000
 
         central_directory = deque()
         central_directory_size = 0
@@ -136,7 +154,53 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             if offset > maximum:
                 raise exception_class()
 
-        def _zip_64_local_header_and_data(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, uncompressed_size, crc_32, _get_compress_obj, chunks):
+        def _with_returned(gen):
+            # We leverage the not-often used "return value" of generators. Here, we want to iterate
+            # over chunks (to encrypt them), but still return the same "return value". So we use a
+            # bit of a trick to extract the return value but still have access to the chunks as
+            # we iterate over them
+
+            return_value = None
+            def with_return_value():
+                nonlocal return_value
+                return_value = yield from gen
+
+            return ((lambda: return_value), with_return_value())
+
+        def _encrypt_dummy(chunks):
+            get_return_value, chunks_with_return = _with_returned(chunks)
+            for chunk in chunks_with_return:
+                yield from _(chunk)
+            return get_return_value()
+
+        def _encrypt_aes(chunks):
+            key_length = 32
+            salt_length = 16
+            password_verification_length = 2
+
+            salt = get_crypto_random(salt_length)
+            yield from _(salt)
+
+            keys = PBKDF2(password, salt, 2 * key_length + password_verification_length, 1000)
+            yield from _(keys[-password_verification_length:])
+
+            encrypter = AES.new(
+                keys[:key_length], AES.MODE_CTR,
+                counter=Counter.new(nbits=128, little_endian=True),
+            )
+            hmac = HMAC.new(keys[key_length:key_length*2], digestmod=SHA1)
+
+            get_return_value, chunks_with_return = _with_returned(chunks)
+            for chunk in chunks_with_return:
+                encrypted_chunk = encrypter.encrypt(chunk)
+                hmac.update(encrypted_chunk)
+                yield from _(encrypted_chunk)
+
+            yield from _(hmac.digest()[:10])
+
+            return get_return_value()
+
+        def _zip_64_local_header_and_data(compression, aes_size_increase, aes_flags, name_encoded, mod_at_ms_dos, mod_at_unix_extra, aes_extra, external_attr, uncompressed_size, crc_32, crc_32_mask, _get_compress_obj, encryption_func, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
@@ -146,12 +210,14 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 16,  # Size of extra
                 0,   # Uncompressed size - since data descriptor
                 0,   # Compressed size - since data descriptor
-            ) + mod_at_unix_extra
+            ) + mod_at_unix_extra + aes_extra
+            flags = aes_flags | data_descriptor_flag | utf8_flag
+
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 45,           # Version
-                b'\x08\x08',  # Flags - data descriptor and utf-8 file names
-                8,            # Compression - deflate
+                flags,
+                compression,
                 mod_at_ms_dos,
                 0,            # CRC32 - 0 since data descriptor
                 0xffffffff,   # Compressed size - since zip64
@@ -162,15 +228,17 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             yield from _(name_encoded)
             yield from _(extra)
 
-            uncompressed_size, compressed_size, crc_32 = yield from _zip_data(
+            uncompressed_size, raw_compressed_size, crc_32 = yield from encryption_func(_zip_data(
                 chunks,
                 _get_compress_obj,
                 max_uncompressed_size=0xffffffffffffffff,
                 max_compressed_size=0xffffffffffffffff,
-            )
+            ))
+            compressed_size = raw_compressed_size + aes_size_increase
+            masked_crc_32 = crc_32 & crc_32_mask
 
             yield from _(data_descriptor_signature)
-            yield from _(data_descriptor_zip_64_struct.pack(crc_32, compressed_size, uncompressed_size))
+            yield from _(data_descriptor_zip_64_struct.pack(masked_crc_32, compressed_size, uncompressed_size))
 
             extra = zip_64_central_directory_extra_struct.pack(
                 zip_64_extra_signature,
@@ -178,16 +246,16 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 uncompressed_size,
                 compressed_size,
                 file_offset,
-            ) + mod_at_unix_extra
+            ) + mod_at_unix_extra + aes_extra
             return central_directory_header_struct.pack(
                 45,           # Version made by
                 3,            # System made by (UNIX)
                 45,           # Version required
                 0,            # Reserved
-                b'\x08\x08',  # Flags - data descriptor and utf-8 file names
-                8,            # Compression - deflate
+                flags,
+                compression,
                 mod_at_ms_dos,
-                crc_32,
+                masked_crc_32,
                 0xffffffff,   # Compressed size - since zip64
                 0xffffffff,   # Uncompressed size - since zip64
                 len(name_encoded),
@@ -199,17 +267,19 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 0xffffffff,   # Offset of local header - since zip64
             ), name_encoded, extra
 
-        def _zip_32_local_header_and_data(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, uncompressed_size, crc_32, _get_compress_obj, chunks):
+        def _zip_32_local_header_and_data(compression, aes_size_increase, aes_flags, name_encoded, mod_at_ms_dos, mod_at_unix_extra, aes_extra, external_attr, uncompressed_size, crc_32, crc_32_mask, _get_compress_obj, encryption_func, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffff, exception_class=OffsetOverflowError)
 
-            extra = mod_at_unix_extra
+            extra = mod_at_unix_extra + aes_extra
+            flags = aes_flags | data_descriptor_flag | utf8_flag
+
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 20,           # Version
-                b'\x08\x08',  # Flags - data descriptor and utf-8 file names
-                8,            # Compression - deflate
+                flags,
+                compression,
                 mod_at_ms_dos,
                 0,            # CRC32 - 0 since data descriptor
                 0,            # Compressed size - 0 since data descriptor
@@ -220,25 +290,27 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             yield from _(name_encoded)
             yield from _(extra)
 
-            uncompressed_size, compressed_size, crc_32 = yield from _zip_data(
+            uncompressed_size, raw_compressed_size, crc_32 = yield from encryption_func(_zip_data(
                 chunks,
                 _get_compress_obj,
                 max_uncompressed_size=0xffffffff,
                 max_compressed_size=0xffffffff,
-            )
+            ))
+            compressed_size = raw_compressed_size + aes_size_increase
+            masked_crc_32 = crc_32 & crc_32_mask
 
             yield from _(data_descriptor_signature)
-            yield from _(data_descriptor_zip_32_struct.pack(crc_32, compressed_size, uncompressed_size))
+            yield from _(data_descriptor_zip_32_struct.pack(masked_crc_32, compressed_size, uncompressed_size))
 
             return central_directory_header_struct.pack(
                 20,           # Version made by
                 3,            # System made by (UNIX)
                 20,           # Version required
                 0,            # Reserved
-                b'\x08\x08',  # Flags - data descriptor and utf-8 file names
-                8,            # Compression - deflate
+                flags,
+                compression,
                 mod_at_ms_dos,
-                crc_32,
+                masked_crc_32,
                 compressed_size,
                 uncompressed_size,
                 len(name_encoded),
@@ -266,37 +338,41 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
 
                 _raise_if_beyond(compressed_size, maximum=max_compressed_size, exception_class=CompressedSizeOverflowError)
 
-                yield from _(compressed_chunk)
+                yield compressed_chunk
 
             compressed_chunk = compress_obj.flush()
             compressed_size += len(compressed_chunk)
 
             _raise_if_beyond(compressed_size, maximum=max_compressed_size, exception_class=CompressedSizeOverflowError)
 
-            yield from _(compressed_chunk)
+            yield compressed_chunk
 
             return uncompressed_size, compressed_size, crc_32
 
-        def _no_compression_64_local_header_and_data(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, uncompressed_size, crc_32, _get_compress_obj, chunks):
+        def _no_compression_64_local_header_and_data(compression, aes_size_increase, aes_flags, name_encoded, mod_at_ms_dos, mod_at_unix_extra, aes_extra, external_attr, uncompressed_size, crc_32, crc_32_mask, _get_compress_obj, encryption_func, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
 
-            chunks, size, crc_32 = _no_compression_buffered_data_size_crc_32(chunks, maximum_size=0xffffffffffffffff)
+            chunks, uncompressed_size, crc_32 = _no_compression_buffered_data_size_crc_32(chunks, maximum_size=0xffffffffffffffff)
 
+            compressed_size = uncompressed_size + aes_size_increase
             extra = zip_64_local_extra_struct.pack(
                 zip_64_extra_signature,
                 16,    # Size of extra
-                size,  # Uncompressed
-                size,  # Compressed
-            ) + mod_at_unix_extra
+                uncompressed_size,
+                compressed_size,
+            ) + mod_at_unix_extra + aes_extra
+            flags = aes_flags | utf8_flag
+            masked_crc_32 = crc_32 & crc_32_mask
+
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 45,           # Version
-                b'\x00\x08',  # Flags - utf-8 file names
-                0,            # Compression - no compression
+                flags,
+                compression,
                 mod_at_ms_dos,
-                crc_32,
+                masked_crc_32,
                 0xffffffff,   # Compressed size - since zip64
                 0xffffffff,   # Uncompressed size - since zip64
                 len(name_encoded),
@@ -305,25 +381,24 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             yield from _(name_encoded)
             yield from _(extra)
 
-            for chunk in chunks:
-                yield from _(chunk)
+            yield from encryption_func(chunks)
 
             extra = zip_64_central_directory_extra_struct.pack(
                 zip_64_extra_signature,
                 24,    # Size of extra
-                size,  # Uncompressed
-                size,  # Compressed
+                uncompressed_size,
+                compressed_size,
                 file_offset,
-            ) + mod_at_unix_extra
+            ) + mod_at_unix_extra + aes_extra
             return central_directory_header_struct.pack(
                45,           # Version made by
                3,            # System made by (UNIX)
                45,           # Version required
                0,            # Reserved
-               b'\x00\x08',  # Flags - utf-8 file names
-               0,            # Compression - none
+               flags,
+               compression,
                mod_at_ms_dos,
-               crc_32,
+               masked_crc_32,
                0xffffffff,   # Compressed size - since zip64
                0xffffffff,   # Uncompressed size - since zip64
                len(name_encoded),
@@ -336,43 +411,46 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             ), name_encoded, extra
 
 
-        def _no_compression_32_local_header_and_data(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, uncompressed_size, crc_32, _get_compress_obj, chunks):
+        def _no_compression_32_local_header_and_data(compression, aes_size_increase, aes_flags, name_encoded, mod_at_ms_dos, mod_at_unix_extra, aes_extra, external_attr, uncompressed_size, crc_32, crc_32_mask, _get_compress_obj, encryption_func, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffff, exception_class=OffsetOverflowError)
 
-            chunks, size, crc_32 = _no_compression_buffered_data_size_crc_32(chunks, maximum_size=0xffffffff)
+            chunks, uncompressed_size, crc_32 = _no_compression_buffered_data_size_crc_32(chunks, maximum_size=0xffffffff)
 
-            extra = mod_at_unix_extra
+            compressed_size = uncompressed_size + aes_size_increase
+            extra = mod_at_unix_extra + aes_extra
+            flags = aes_flags | utf8_flag
+            masked_crc_32 = crc_32 & crc_32_mask
+
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 20,           # Version
-                b'\x00\x08',  # Flags - utf-8 file names
-                0,            # Compression - no compression
+                flags,
+                compression,
                 mod_at_ms_dos,
-                crc_32,
-                size,         # Compressed
-                size,         # Uncompressed
+                masked_crc_32,
+                compressed_size,
+                uncompressed_size,
                 len(name_encoded),
                 len(extra),
             ))
             yield from _(name_encoded)
             yield from _(extra)
 
-            for chunk in chunks:
-                yield from _(chunk)
+            yield from encryption_func(chunks)
 
             return central_directory_header_struct.pack(
                20,           # Version made by
                3,            # System made by (UNIX)
                20,           # Version required
                0,            # Reserved
-               b'\x00\x08',  # Flags - utf-8 file names
-               0,            # Compression - none
+               flags,
+               compression,
                mod_at_ms_dos,
-               crc_32,
-               size,         # Compressed
-               size,         # Uncompressed
+               masked_crc_32,
+               compressed_size,
+               uncompressed_size,
                len(name_encoded),
                len(extra),
                0,            # File comment length
@@ -401,24 +479,28 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
 
             return chunks, size, crc_32
 
-        def _no_compression_streamed_64_local_header_and_data(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, uncompressed_size, crc_32, _get_compress_obj, chunks):
+        def _no_compression_streamed_64_local_header_and_data(compression, aes_size_increase, aes_flags, name_encoded, mod_at_ms_dos, mod_at_unix_extra, aes_extra, external_attr, uncompressed_size, crc_32, crc_32_mask, _get_compress_obj, encryption_func, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
 
+            compressed_size = uncompressed_size + aes_size_increase
             extra = zip_64_local_extra_struct.pack(
                 zip_64_extra_signature,
                 16,                 # Size of extra
-                uncompressed_size,  # Uncompressed
-                uncompressed_size,  # Compressed
-            ) + mod_at_unix_extra
+                uncompressed_size,
+                compressed_size,
+            ) + mod_at_unix_extra + aes_extra
+            flags = aes_flags | utf8_flag
+            masked_crc_32 = crc_32 & crc_32_mask
+
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 45,           # Version
-                b'\x00\x08',  # Flags - utf-8 file names
-                0,            # Compression - no compression
+                flags,
+                compression,
                 mod_at_ms_dos,
-                crc_32,
+                masked_crc_32,
                 0xffffffff,   # Compressed size - since zip64
                 0xffffffff,   # Uncompressed size - since zip64
                 len(name_encoded),
@@ -427,24 +509,24 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             yield from _(name_encoded)
             yield from _(extra)
 
-            yield from _no_compression_streamed_data(chunks, uncompressed_size, crc_32, 0xffffffffffffffff)
+            yield from encryption_func(_no_compression_streamed_data(chunks, uncompressed_size, crc_32, 0xffffffffffffffff))
 
             extra = zip_64_central_directory_extra_struct.pack(
                 zip_64_extra_signature,
                 24,                 # Size of extra
-                uncompressed_size,  # Uncompressed
-                uncompressed_size,  # Compressed
+                uncompressed_size,
+                compressed_size,
                 file_offset,
-            ) + mod_at_unix_extra
+            ) + mod_at_unix_extra + aes_extra
             return central_directory_header_struct.pack(
                45,           # Version made by
                3,            # System made by (UNIX)
                45,           # Version required
                0,            # Reserved
-               b'\x00\x08',  # Flags - utf-8 file names
-               0,            # Compression - none
+               flags,
+               compression,
                mod_at_ms_dos,
-               crc_32,
+               masked_crc_32,
                0xffffffff,   # Compressed size - since zip64
                0xffffffff,   # Uncompressed size - since zip64
                len(name_encoded),
@@ -457,40 +539,44 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             ), name_encoded, extra
 
 
-        def _no_compression_streamed_32_local_header_and_data(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, uncompressed_size, crc_32, _get_compress_obj, chunks):
+        def _no_compression_streamed_32_local_header_and_data(compression, aes_size_increase, aes_flags, name_encoded, mod_at_ms_dos, mod_at_unix_extra, aes_extra, external_attr, uncompressed_size, crc_32, crc_32_mask, _get_compress_obj, encryption_func, chunks):
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffff, exception_class=OffsetOverflowError)
 
-            extra = mod_at_unix_extra
+            compressed_size = uncompressed_size + aes_size_increase
+            extra = mod_at_unix_extra + aes_extra
+            flags = aes_flags | utf8_flag
+            masked_crc_32 = crc_32 & crc_32_mask
+
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 20,                 # Version
-                b'\x00\x08',        # Flags - utf-8 file names
-                0,                  # Compression - no compression
+                flags,
+                compression,
                 mod_at_ms_dos,
-                crc_32,
-                uncompressed_size,  # Compressed
-                uncompressed_size,  # Uncompressed
+                masked_crc_32,
+                compressed_size,
+                uncompressed_size,
                 len(name_encoded),
                 len(extra),
             ))
             yield from _(name_encoded)
             yield from _(extra)
 
-            yield from _no_compression_streamed_data(chunks, uncompressed_size, crc_32, 0xffffffff)
+            yield from encryption_func(_no_compression_streamed_data(chunks, uncompressed_size, crc_32, 0xffffffff))
 
             return central_directory_header_struct.pack(
                20,                 # Version made by
                3,                  # System made by (UNIX)
                20,                 # Version required
                0,                  # Reserved
-               b'\x00\x08',        # Flags - utf-8 file names
-               0,                  # Compression - none
+               flags,
+               compression,
                mod_at_ms_dos,
-               crc_32,
-               uncompressed_size,  # Compressed
-               uncompressed_size,  # Uncompressed
+               masked_crc_32,
+               compressed_size,
+               uncompressed_size,
                len(name_encoded),
                len(extra),
                0,                  # File comment length
@@ -507,7 +593,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 actual_crc_32 = zlib.crc32(chunk, actual_crc_32)
                 size += len(chunk)
                 _raise_if_beyond(size, maximum=maximum_size, exception_class=UncompressedSizeOverflowError)
-                yield from _(chunk)
+                yield chunk
 
             if actual_crc_32 != crc_32:
                 raise CRC32IntegrityError()
@@ -543,15 +629,19 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 (mode << 16) | \
                 (0x10 if name_encoded[-1:] == b'/' else 0x0)  # MS-DOS directory
 
-            data_func = \
-                _zip_64_local_header_and_data if _method is _ZIP_64 else \
-                _zip_32_local_header_and_data if _method is _ZIP_32 else \
-                _no_compression_64_local_header_and_data if _method is _NO_COMPRESSION_BUFFERED_64 else \
-                _no_compression_32_local_header_and_data if _method is _NO_COMPRESSION_BUFFERED_32 else \
-                _no_compression_streamed_64_local_header_and_data if _method is _NO_COMPRESSION_STREAMED_64 else \
-                _no_compression_streamed_32_local_header_and_data
+            data_func, raw_compression = \
+                (_zip_64_local_header_and_data, 8) if _method is _ZIP_64 else \
+                (_zip_32_local_header_and_data, 8) if _method is _ZIP_32 else \
+                (_no_compression_64_local_header_and_data, 0) if _method is _NO_COMPRESSION_BUFFERED_64 else \
+                (_no_compression_32_local_header_and_data, 0) if _method is _NO_COMPRESSION_BUFFERED_32 else \
+                (_no_compression_streamed_64_local_header_and_data, 0) if _method is _NO_COMPRESSION_STREAMED_64 else \
+                (_no_compression_streamed_32_local_header_and_data, 0)
 
-            central_directory_header_entry, name_encoded, extra = yield from data_func(name_encoded, mod_at_ms_dos, mod_at_unix_extra, external_attr, uncompressed_size, crc_32, _get_compress_obj, evenly_sized(chunks))
+            compression, aes_size_increase, aes_flags, aes_extra, crc_32_mask, encryption_func = \
+                (99, 28, aes_flag, aes_extra_struct.pack(aes_extra_signature, 7, 2, b'AE', 3, raw_compression), 0, _encrypt_aes) if password is not None else \
+                (raw_compression, 0, 0, b'', 0xffffffff, _encrypt_dummy)
+
+            central_directory_header_entry, name_encoded, extra = yield from data_func(compression, aes_size_increase, aes_flags, name_encoded, mod_at_ms_dos, mod_at_unix_extra, aes_extra, external_attr, uncompressed_size, crc_32, crc_32_mask, _get_compress_obj, encryption_func, evenly_sized(chunks))
             central_directory_size += len(central_directory_header_signature) + len(central_directory_header_entry) + len(name_encoded) + len(extra)
             central_directory.append((central_directory_header_entry, name_encoded, extra))
 
