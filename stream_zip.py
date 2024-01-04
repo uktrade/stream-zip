@@ -94,14 +94,14 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
 
     def get_zipped_chunks_uneven():
         local_header_signature = b'PK\x03\x04'
-        local_header_struct = Struct('<H2sH4sIIIHH')
+        local_header_struct = Struct('<HHH4sIIIHH')
 
         data_descriptor_signature = b'PK\x07\x08'
         data_descriptor_zip_64_struct = Struct('<IQQ')
         data_descriptor_zip_32_struct = Struct('<III')
 
         central_directory_header_signature = b'PK\x01\x02'
-        central_directory_header_struct = Struct('<BBBB2sH4sIIIHHHHHII')
+        central_directory_header_struct = Struct('<BBBBHH4sIIIHHHHHII')
 
         zip_64_end_of_central_directory_signature = b'PK\x06\x06'
         zip_64_end_of_central_directory_struct = Struct('<QHHIIQQQQ')
@@ -120,6 +120,9 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
         mod_at_unix_extra_struct = Struct('<2sH1sl')
 
         modified_at_struct = Struct('<HH')
+
+        data_descriptor_flag = 0b0000000000001000
+        utf8_flag = 0b0000100000000000
 
         central_directory = deque()
         central_directory_size = 0
@@ -147,10 +150,12 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 0,   # Uncompressed size - since data descriptor
                 0,   # Compressed size - since data descriptor
             ) + mod_at_unix_extra
+            flags = data_descriptor_flag | utf8_flag
+
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 45,           # Version
-                b'\x08\x08',  # Flags - data descriptor and utf-8 file names
+                flags,
                 8,            # Compression - deflate
                 mod_at_ms_dos,
                 0,            # CRC32 - 0 since data descriptor
@@ -184,7 +189,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 3,            # System made by (UNIX)
                 45,           # Version required
                 0,            # Reserved
-                b'\x08\x08',  # Flags - data descriptor and utf-8 file names
+                flags,
                 8,            # Compression - deflate
                 mod_at_ms_dos,
                 crc_32,
@@ -205,10 +210,12 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             _raise_if_beyond(file_offset, maximum=0xffffffff, exception_class=OffsetOverflowError)
 
             extra = mod_at_unix_extra
+            flags = data_descriptor_flag | utf8_flag
+
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 20,           # Version
-                b'\x08\x08',  # Flags - data descriptor and utf-8 file names
+                flags,
                 8,            # Compression - deflate
                 mod_at_ms_dos,
                 0,            # CRC32 - 0 since data descriptor
@@ -235,7 +242,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 3,            # System made by (UNIX)
                 20,           # Version required
                 0,            # Reserved
-                b'\x08\x08',  # Flags - data descriptor and utf-8 file names
+                flags,
                 8,            # Compression - deflate
                 mod_at_ms_dos,
                 crc_32,
@@ -290,10 +297,12 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 size,  # Uncompressed
                 size,  # Compressed
             ) + mod_at_unix_extra
+            flags = utf8_flag
+
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 45,           # Version
-                b'\x00\x08',  # Flags - utf-8 file names
+                flags,
                 0,            # Compression - no compression
                 mod_at_ms_dos,
                 crc_32,
@@ -320,7 +329,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                3,            # System made by (UNIX)
                45,           # Version required
                0,            # Reserved
-               b'\x00\x08',  # Flags - utf-8 file names
+               flags,
                0,            # Compression - none
                mod_at_ms_dos,
                crc_32,
@@ -344,10 +353,12 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             chunks, size, crc_32 = _no_compression_buffered_data_size_crc_32(chunks, maximum_size=0xffffffff)
 
             extra = mod_at_unix_extra
+            flags = utf8_flag
+
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 20,           # Version
-                b'\x00\x08',  # Flags - utf-8 file names
+                flags,
                 0,            # Compression - no compression
                 mod_at_ms_dos,
                 crc_32,
@@ -367,7 +378,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                3,            # System made by (UNIX)
                20,           # Version required
                0,            # Reserved
-               b'\x00\x08',  # Flags - utf-8 file names
+               flags,
                0,            # Compression - none
                mod_at_ms_dos,
                crc_32,
@@ -412,10 +423,12 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                 uncompressed_size,  # Uncompressed
                 uncompressed_size,  # Compressed
             ) + mod_at_unix_extra
+            flags = utf8_flag
+
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 45,           # Version
-                b'\x00\x08',  # Flags - utf-8 file names
+                flags,
                 0,            # Compression - no compression
                 mod_at_ms_dos,
                 crc_32,
@@ -441,7 +454,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                3,            # System made by (UNIX)
                45,           # Version required
                0,            # Reserved
-               b'\x00\x08',  # Flags - utf-8 file names
+               flags,
                0,            # Compression - none
                mod_at_ms_dos,
                crc_32,
@@ -463,10 +476,12 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
             _raise_if_beyond(file_offset, maximum=0xffffffff, exception_class=OffsetOverflowError)
 
             extra = mod_at_unix_extra
+            flags = utf8_flag
+
             yield from _(local_header_signature)
             yield from _(local_header_struct.pack(
                 20,                 # Version
-                b'\x00\x08',        # Flags - utf-8 file names
+                flags,
                 0,                  # Compression - no compression
                 mod_at_ms_dos,
                 crc_32,
@@ -485,7 +500,7 @@ def stream_zip(files, chunk_size=65536, get_compressobj=lambda: zlib.compressobj
                3,                  # System made by (UNIX)
                20,                 # Version required
                0,                  # Reserved
-               b'\x00\x08',        # Flags - utf-8 file names
+               flags,
                0,                  # Compression - none
                mod_at_ms_dos,
                crc_32,
