@@ -2,6 +2,7 @@ from datetime import datetime, timezone, timedelta
 from io import BytesIO
 import contextlib
 import os
+import secrets
 import stat
 import subprocess
 import zlib
@@ -1100,7 +1101,7 @@ def test_unzip_modification_time_extended_timestamps_disabled(method, timezone, 
 def test_password_unzips_with_stream_unzip(method):
     now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
-    password = 'my-pass'
+    password = secrets.token_urlsafe(32)
 
     files = (
         ('file-1', now, mode, method, (b'a' * 9, b'b' * 9)),
@@ -1127,7 +1128,7 @@ def test_password_unzips_with_stream_unzip(method):
 def test_bad_password_not_unzips_with_stream_unzip(method):
     now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
-    password = 'my-pass'
+    password = secrets.token_urlsafe(32)
 
     files = (
         ('file-1', now, mode, method, (b'a' * 9, b'b' * 9)),
@@ -1151,7 +1152,7 @@ def test_bad_password_not_unzips_with_stream_unzip(method):
 def test_password_unzips_with_7z(method):
     now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
-    password = 'my-pass'
+    password = secrets.token_urlsafe(32)
 
     files = (
         ('file-1', now, mode, method, (b'a' * 9, b'b' * 9)),
@@ -1165,7 +1166,7 @@ def test_password_unzips_with_7z(method):
             for zipped_chunk in stream_zip(files, password=password):
                 fp.write(zipped_chunk)
 
-        r = subprocess.run(['7zz', '-pmy-pass', 'e', 'test.zip'])
+        r = subprocess.run(['7zz', '-p' + password, 'e', 'test.zip'])
         assert r.returncode == 0
 
         for file in files:
@@ -1187,7 +1188,7 @@ def test_password_unzips_with_7z(method):
 def test_password_unzips_with_pyzipper(method):
     now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
-    password = 'my-pass'
+    password = secrets.token_urlsafe(32)
 
     files = (
         ('file-1', now, mode, method, (b'a' * 9, b'b' * 9)),
@@ -1221,7 +1222,7 @@ def test_password_unzips_with_pyzipper(method):
 def test_password_bytes_not_deterministic(method):
     now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
-    password = 'my-pass'
+    password = secrets.token_urlsafe(32)
 
     files = (
         ('file-1', now, mode, method, (b'a' * 9, b'b' * 9)),
@@ -1251,7 +1252,7 @@ def test_crc_32_not_in_file(method):
 
     now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
-    password = 'my-pass'
+    password = secrets.token_urlsafe(32)
 
     files = (
         ('file-1', now, mode, method, (b'a' * 9, b'b' * 9)),
