@@ -20,13 +20,13 @@ classifiers = [
 [project.optional-dependencies]
 dev = [
     "coverage>=6.2",
-    "pytest>=6.2.5",
+    "pytest>=7.0.1",
     "pytest-cov>=3.0.0",
     "stream-unzip>=0.0.86"
 ]
 ci = [
     "coverage==6.2",
-    "pytest==6.2.5",
+    "pytest==7.0.1",
     "pytest-cov==3.0.0",
     "stream-unzip==0.0.86"
 ]
