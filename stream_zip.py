@@ -168,10 +168,7 @@ def stream_zip(files, chunk_size=65536,
             return ((lambda: return_value), with_return_value())
 
         def _encrypt_dummy(chunks):
-            get_return_value, chunks_with_return = _with_returned(chunks)
-            for chunk in chunks_with_return:
-                yield from _(chunk)
-            return get_return_value()
+            return chunks
 
         def _encrypt_aes(chunks):
             key_length = 32
