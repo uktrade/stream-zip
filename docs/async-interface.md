@@ -26,7 +26,7 @@ async def async_stream_zip(member_files, *args, **kwargs):
         while (value := asyncio.run_coroutine_threadsafe(anext(async_it, done), loop).result()) is not done:
             yield value
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     sync_member_files = (
         member_file[0:4] + (to_sync_iterable(member_file[4],),)
         for member_file in to_sync_iterable(member_files)
