@@ -1,7 +1,9 @@
 from datetime import datetime, timezone, timedelta
 from io import BytesIO
+import asyncio
 import contextlib
 import os
+import platform
 import secrets
 import stat
 import subprocess
@@ -15,6 +17,7 @@ import pyzipper
 from stream_unzip import IncorrectAESPasswordError, UnsupportedZip64Error, stream_unzip
 
 from stream_zip import (
+    async_stream_zip,
     stream_zip,
     NO_COMPRESSION_64,
     NO_COMPRESSION_32,
@@ -31,6 +34,9 @@ from stream_zip import (
     NameLengthOverflowError,
 )
 
+
+###################################################################################################
+# Utility functions for tests
 
 @contextlib.contextmanager
 def cwd(new_dir):
@@ -49,6 +55,9 @@ def gen_bytes(num):
         num -= to_yield
         yield chunk[:to_yield]
 
+
+###################################################################################################
+# Tests of sync interface: stream_zip
 
 def test_with_stream_unzip_zip_64():
     now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
@@ -1274,3 +1283,154 @@ def test_crc_32_not_in_file(method):
     assert crc_32[2:4] not in encrypted_bytes
     assert crc_32[0:3] not in encrypted_bytes
     assert crc_32[1:4] not in encrypted_bytes
+
+
+###################################################################################################
+# Tests of sync interface: async_stream_zip
+#
+# Under the hood we know that async_stream_zip delegates to stream_zip, so there isn't as much
+# of a need to test everything. We have a brief test that it seems to work in one case, but
+# otherwise focus on the riskiest parts: that exceptions don't propagate, that the async version
+# doesn't actually stream, or that context vars are not propagated properly
+
+def test_async_stream_zip_equivalent_to_stream_unzip_zip_32_and_zip_64():
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
+    mode = stat.S_IFREG | 0o600
+
+    def sync_files():
+        yield 'file-1', now, mode, ZIP_64, (b'a' * 10000, b'b' * 10000)
+        yield 'file-2', now, mode, ZIP_32, (b'c', b'd')
+
+    async def async_files():
+        async def data_1():
+            yield b'a' * 10000
+            yield b'b' * 10000
+
+        async def data_2():
+            yield b'c'
+            yield b'd'
+
+        yield 'file-1', now, mode, ZIP_64, data_1()
+        yield 'file-2', now, mode, ZIP_32, data_2()
+
+    # Might not be performant, but good enough for the test
+    async def async_concat(chunks):
+        result = b''
+        async for chunk in chunks:
+            result += chunk
+        return result
+
+    async def test():
+        assert b''.join(stream_zip(sync_files())) == await async_concat(async_stream_zip(async_files()))
+
+    asyncio.get_event_loop().run_until_complete(test())
+
+
+def test_async_exception_propagates():
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
+    mode = stat.S_IFREG | 0o600
+
+    async def async_data():
+        yield b'-'
+
+    async def async_files():
+        yield 'file-1', now, mode, ZIP_64, async_data()
+        raise Exception('From generator')
+
+    async def test():
+        async for chunk in async_stream_zip(async_files()):
+            pass
+
+    with pytest.raises(Exception,  match='From generator'):
+        asyncio.get_event_loop().run_until_complete(test())
+
+
+def test_async_exception_from_bytes_propagates():
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
+    mode = stat.S_IFREG | 0o600
+
+    async def async_data():
+        yield b'-'
+        raise Exception('From generator')
+
+    async def async_files():
+        yield 'file-1', now, mode, ZIP_64, async_data()
+
+    async def test():
+        async for chunk in async_stream_zip(async_files()):
+            pass
+
+    with pytest.raises(Exception,  match='From generator'):
+        asyncio.get_event_loop().run_until_complete(test())
+
+
+def test_async_stream_zip_does_stream():
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
+    mode = stat.S_IFREG | 0o600
+
+    state = []
+
+    async def async_data():
+        for i in range(0, 4):
+            state.append('in')
+            for j in range(0, 1000):
+                yield b'-' * 64000
+
+    async def async_files():
+        yield 'file-1', now, mode, ZIP_64, async_data()
+
+    async def test():
+        async for chunk in async_stream_zip(async_files()):
+            state.append('out')
+
+    asyncio.get_event_loop().run_until_complete(test())
+    assert state == ['in', 'in', 'out', 'in', 'out', 'in', 'out', 'out']
+
+
+@pytest.mark.skipif(
+    tuple(int(v) for v in platform.python_version().split('.')) < (3,7,0),
+    reason="contextvars are not supported before Python 3.7.0",
+)
+def test_copy_of_context_variable_available_in_iterable():
+    # Ideally the context would be identical in the iterables, because that's what a purely asyncio
+    # implementation of stream-zip would likely do
+
+    import contextvars
+
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
+    mode = stat.S_IFREG | 0o600
+
+    var = contextvars.ContextVar('test')
+    var.set('set-from-outer')
+
+    d = contextvars.ContextVar('d')
+    d.set({'key': 'original-value'})
+
+    inner_files = None
+    inner_bytes = None
+
+    async def async_files():
+        nonlocal inner_files, inner_bytes
+
+        async def data_1():
+            nonlocal inner_bytes
+            inner_bytes = var.get()
+            var.set('set-from-inner-bytes')
+            d.get()['key'] = 'set-from-inner-bytes'
+            yield b'-'
+
+        inner_files = var.get()
+        var.set('set-from-inner-files')
+        d.get()['key'] = 'set-from-inner-files'
+        yield 'file-1', now, mode, ZIP_64, data_1()
+
+    async def test():
+        async for chunk in async_stream_zip(async_files()):
+            pass
+
+    asyncio.get_event_loop().run_until_complete(test())
+
+    assert var.get() == 'set-from-outer'
+    assert inner_files == 'set-from-outer'
+    assert inner_bytes == 'set-from-outer'
+    assert d.get()['key'] == 'set-from-inner-bytes'

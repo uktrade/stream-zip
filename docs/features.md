@@ -19,3 +19,5 @@ In addition to being memory efficient (with some [limitations](/get-started/#lim
 - Allows the specification of permissions on the member files and directories (although not all clients respect them)
 
 - By default stores modification time as an extended timestamp. An extended timestamp is a more accurate timestamp than the original ZIP format allows
+
+- Provides an async interface (that uses threads under the hood to share code with the sync interface without blocking the event loop)

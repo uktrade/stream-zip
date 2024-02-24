@@ -1,5 +1,6 @@
 from collections import deque
 from struct import Struct
+import asyncio
 import secrets
 import zlib
 
@@ -713,6 +714,48 @@ def stream_zip(files, chunk_size=65536,
 
     zipped_chunks = get_zipped_chunks_uneven()
     yield from evenly_sized(zipped_chunks)
+
+
+async def async_stream_zip(member_files, *args, **kwargs):
+
+    async def to_async_iterable(sync_iterable):
+        # asyncio.to_thread is not available until Python 3.9, and StopIteration doesn't get
+        # propagated by run_in_executor, so we use a sentinel to detect the end of the iterable
+        done = object()
+        it = iter(sync_iterable)
+
+        # contextvars are not available until Python 3.7
+        try:
+            import contextvars
+        except ImportError:
+            get_args = lambda: (next, it, done)
+        else:
+            get_args = lambda: (contextvars.copy_context().run, next, it, done)
+
+        while True:
+            value = await loop.run_in_executor(None, *get_args())
+            if value is done:
+                break
+            yield value
+
+    def to_sync_iterable(async_iterable):
+        # The built-in aiter and anext functions are not available until Python 3.10
+        async_it = async_iterable.__aiter__()
+        while True:
+            try:
+                value = asyncio.run_coroutine_threadsafe(async_it.__anext__(), loop).result()
+            except StopAsyncIteration:
+                break
+            yield value
+
+    loop = asyncio.get_event_loop()
+    sync_member_files = (
+        member_file[0:4] + (to_sync_iterable(member_file[4],),)
+        for member_file in to_sync_iterable(member_files)
+    )
+
+    async for chunk in to_async_iterable(stream_zip(sync_member_files, *args, **kwargs)):
+        yield chunk
 
 
 class ZipError(Exception):
