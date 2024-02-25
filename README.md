@@ -29,7 +29,7 @@ In addition to being memory efficient (with some [limitations](https://stream-zi
 
 - By default stores modification time as an extended timestamp. An extended timestamp is a more accurate timestamp than the original ZIP format allows
 
-- Provides an async interface (that uses threads under the hood to share code with the sync interface without blocking the event loop)
+- Provides an async interface (that uses threads under the hood)
 
 <!-- --8<-- [end:features] -->
 
