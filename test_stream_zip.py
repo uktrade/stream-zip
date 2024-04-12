@@ -989,6 +989,25 @@ def test_bsdio_empty_directory(method, trailing_slash, mode, expected_mode):
 @pytest.mark.parametrize(
     "modified_at,expected_time",
     [
+        # Datetimes near the 1980 epoch used in the MS-DOS header.
+        # Note the 2-second precision and the cutoff of everything before the epoch.
+        (datetime(1979, 12, 31, 23, 59, 58), (1980, 1, 1, 0, 0, 0)),
+        (datetime(1979, 12, 31, 23, 59, 59), (1980, 1, 1, 0, 0, 0)),
+        (datetime(1980,  1,  1,  0,  0,  0),  (1980, 1, 1, 0, 0, 0)),
+        (datetime(1980,  1,  1,  0,  0,  1),  (1980, 1, 1, 0, 0, 0)),
+        (datetime(1980,  1,  1,  0,  0,  2),  (1980, 1, 1, 0, 0, 2)),
+        (datetime(1980,  1,  1,  0,  0,  3),  (1980, 1, 1, 0, 0, 2)),
+        (datetime(1980,  1,  1,  0,  0,  4),  (1980, 1, 1, 0, 0, 4)),
+        # Datetimes near year 2108 test the maximum datetime that the MS-DOS
+        # header can store. Again, note the 2-second precision.
+        (datetime(2107, 12, 31, 23, 59, 56), (2107, 12, 31, 23, 59, 56)),
+        (datetime(2107, 12, 31, 23, 59, 57), (2107, 12, 31, 23, 59, 56)),
+        (datetime(2107, 12, 31, 23, 59, 58), (2107, 12, 31, 23, 59, 58)),
+        (datetime(2107, 12, 31, 23, 59, 59), (2107, 12, 31, 23, 59, 58)),
+        (datetime(2108,  1,  1,  0,  0,  0),  (2107, 12, 31, 23, 59, 58)),
+        (datetime(2108,  1,  1,  0,  0,  1),  (2107, 12, 31, 23, 59, 58)),
+        (datetime(2108,  1,  1,  0,  0,  2),  (2107, 12, 31, 23, 59, 58)),
+        # Miscellaneous
         (datetime(2011, 1, 1, 1, 2, 3, 123), (2011, 1, 1, 1, 2, 2)),
         (datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=0))), (2011, 1, 1, 1, 2, 2)),
         (datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=1))), (2011, 1, 1, 1, 2, 2)),
@@ -1027,27 +1046,40 @@ def test_zipfile_modification_time(method, modified_at, expected_time):
     ],
 )
 @pytest.mark.parametrize(
-    "timezone,modified_at",
+    "timezone,modified_at,expected_modified_at",
     [
-        ('UTC+0', datetime(2011, 1, 1, 1, 2, 3, 123)),
-        ('UTC+0', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=0)))),
-        ('UTC+0', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=1)))),
-        ('UTC+0', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=-1)))),
-        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123)),
-        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=0)))),
-        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=1)))),
-        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=-1)))),
-        ('UTC-1', datetime(2011, 1, 1, 1, 2, 3, 123)),
-        ('UTC-1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=0)))),
-        ('UTC-1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=1)))),
-        ('UTC-1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=-1)))),
+        # Datetimes near the UNIX epoch (1970)
+        ('UTC+0', datetime(1969, 12, 31, 23, 59, 58), datetime(1970,  1,  1,  0,  0,  0)),
+        ('UTC+0', datetime(1969, 12, 31, 23, 59, 59), datetime(1970,  1,  1,  0,  0,  0)),
+        ('UTC+0', datetime(1970,  1,  1,  0,  0,  0), None),
+        # Datetimes near the maximum representable datetime in the UNIX timestamp header 
+        # (4-byte signed integer counting the number of seconds since 1970)
+        ('UTC+0', datetime(2038,  1, 19,  3, 14,  7), None),
+        ('UTC+0', datetime(2038,  1, 19,  3, 14,  8), datetime(2038,  1, 19,  3, 14,  7)),
+        ('UTC+0', datetime(2038,  1, 19,  3, 14,  9), datetime(2038,  1, 19,  3, 14,  7)),
+        ('UTC+0', datetime(2038,  1, 19,  3, 14, 10), datetime(2038,  1, 19,  3, 14,  7)),
+        # Miscellaneous
+        ('UTC+0', datetime(2011, 1, 1, 1, 2, 3, 123), None),
+        ('UTC+0', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=0))), None),
+        ('UTC+0', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=1))), None),
+        ('UTC+0', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=-1))), None),
+        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123), None),
+        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=0))), None),
+        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=1))), None),
+        ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=-1))), None),
+        ('UTC-1', datetime(2011, 1, 1, 1, 2, 3, 123), None),
+        ('UTC-1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=0))), None),
+        ('UTC-1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=1))), None),
+        ('UTC-1', datetime(2011, 1, 1, 1, 2, 3, 123, tzinfo=timezone(timedelta(hours=-1))), None),
     ],
 )
-def test_unzip_modification_time(method, timezone, modified_at):
+def test_unzip_modification_time(method, timezone, modified_at, expected_modified_at):
     member_files = (
         ('my_file', modified_at, stat.S_IFREG | 0o600, method, ()),
     )
     zipped_chunks = stream_zip(member_files)
+    if expected_modified_at is None:
+        expected_modified_at = modified_at
 
     with \
             TemporaryDirectory() as d, \
@@ -1059,7 +1091,7 @@ def test_unzip_modification_time(method, timezone, modified_at):
 
         subprocess.run(['unzip', f'{d}/test.zip', '-d', d], env={'TZ': timezone})
 
-        assert os.path.getmtime('my_file') == int(modified_at.timestamp())
+        assert os.path.getmtime('my_file') == int(expected_modified_at.timestamp())
 
 
 @pytest.mark.parametrize(
@@ -1074,6 +1106,28 @@ def test_unzip_modification_time(method, timezone, modified_at):
 @pytest.mark.parametrize(
     "timezone,modified_at,expected_modified_at",
     [
+        # Datetimes near the 1980 epoch used in the MS-DOS header.
+        # Note the 2-second precision and the cutoff of everything before the epoch.
+        ("UTC+0", datetime(1979, 12, 31, 23, 59, 58), datetime(1980,  1,  1,  0,  0,  0)),
+        ("UTC+0", datetime(1979, 12, 31, 23, 59, 59), datetime(1980,  1,  1,  0,  0,  0)),
+        ("UTC+0", datetime(1980,  1,  1,  0,  0,  0), datetime(1980,  1,  1,  0,  0,  0)),
+        ("UTC+0", datetime(1980,  1,  1,  0,  0,  1), datetime(1980,  1,  1,  0,  0,  0)),
+        ("UTC+0", datetime(1980,  1,  1,  0,  0,  2), datetime(1980,  1,  1,  0,  0,  2)),
+        ("UTC+0", datetime(1980,  1,  1,  0,  0,  3), datetime(1980,  1,  1,  0,  0,  2)),
+        ("UTC+0", datetime(1980,  1,  1,  0,  0,  4), datetime(1980,  1,  1,  0,  0,  4)),
+        # Datetimes near year 2108 test the maximum datetime that the MS-DOS
+        # header can store. Again, note the 2-second precision.
+        ("UTC+0", datetime(2100, 12, 31, 23, 59, 56), datetime(2100, 12, 31, 23, 59, 56)),
+        ("UTC+0", datetime(2100, 12, 31, 23, 59, 57), datetime(2100, 12, 31, 23, 59, 56)),
+        ("UTC+0", datetime(2100, 12, 31, 23, 59, 58), datetime(2100, 12, 31, 23, 59, 58)),
+        ("UTC+0", datetime(2100, 12, 31, 23, 59, 59), datetime(2100, 12, 31, 23, 59, 58)),
+        # The upper limit for the datetime field is supposed to be the end of year 2107.
+        # In practice, however, we see very strange behaviour from `unzip` after year 2100.
+        # It seems that there is an off-by-one bug in `unzip` for dates after year 2100.
+        ("UTC+0", datetime(2101,  1,  1,  0,  0,  0), datetime(2101,  1,  2,  0,  0,  0)),
+        ("UTC+0", datetime(2101,  1,  2,  0,  0,  0), datetime(2101,  1,  3,  0,  0,  0)),
+        ("UTC+0", datetime(2101,  1,  3,  0,  0,  0), datetime(2101,  1,  4,  0,  0,  0)),
+        # Miscellaneous
         ('UTC+1', datetime(2011, 1, 1, 1, 2, 3, 123), datetime(2011, 1, 1, 2, 2, 2, 0)),
     ],
 )
