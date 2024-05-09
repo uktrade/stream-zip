@@ -1,4 +1,5 @@
 from collections import deque
+from datetime import datetime
 from struct import Struct
 import asyncio
 import secrets
@@ -20,6 +21,17 @@ _ZIP_64 = object()
 
 _AUTO_UPGRADE_CENTRAL_DIRECTORY = object()
 _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY = object()
+
+_MS_DOS_DATE_BEGIN = datetime(1980, 1, 1)
+_MS_DOS_DATE_END = datetime(
+    # Max year since 1980 repesentable in a 7-bit unsigned integer
+    year=_MS_DOS_DATE_BEGIN.year + 2**7-1,
+    month=12,
+    day=31,
+    hour=23,
+    minute=59,
+    second=59,
+)
 
 def __NO_COMPRESSION_BUFFERED_32(offset, default_get_compressobj):
     return _NO_COMPRESSION_BUFFERED_32, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj, None, None
@@ -612,19 +624,25 @@ def stream_zip(files, chunk_size=65536,
             name_encoded = name.encode('utf-8')
             _raise_if_beyond(len(name_encoded), maximum=0xffff, exception_class=NameLengthOverflowError)
 
+            # Remove time zone information (if any) during clamp
+            mod_datetime_ms_dos = min(max(modified_at.replace(tzinfo=None), _MS_DOS_DATE_BEGIN), _MS_DOS_DATE_END)
             mod_at_ms_dos = modified_at_struct.pack(
-                int(modified_at.second / 2) | \
-                (modified_at.minute << 5) | \
-                (modified_at.hour << 11),
-                modified_at.day | \
-                (modified_at.month << 5) | \
-                (modified_at.year - 1980) << 9,
+                (mod_datetime_ms_dos.second // 2) | \
+                (mod_datetime_ms_dos.minute << 5) | \
+                (mod_datetime_ms_dos.hour << 11),
+                mod_datetime_ms_dos.day | \
+                (mod_datetime_ms_dos.month << 5) | \
+                (mod_datetime_ms_dos.year - 1980) << 9,
             )
             mod_at_unix_extra = mod_at_unix_extra_struct.pack(
                 mod_at_unix_extra_signature,
                 5,        # Size of extra
                 b'\x01',  # Only modification time (as opposed to also other times)
-                int(modified_at.timestamp()),
+                # Clamp timestamp to fit the field size (4-byte signed integer)
+                # In principle, we the lower limit should be `-2**31` but we set it
+                # to zero to avoid issues with common zip utilities like `unzip`.
+                # Said tools do not correctly interpret negative timestamps.
+                max(min(int(modified_at.timestamp()), 2**31 - 1), 0),
             ) if extended_timestamps else b''
             external_attr = \
                 (mode << 16) | \
