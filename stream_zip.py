@@ -3,7 +3,7 @@ from struct import Struct
 import asyncio
 import secrets
 import zlib
-from typing import Any, Iterable, Tuple, Optional, Deque
+from typing import Any, Iterable, Tuple, Optional, Deque, Type, AsyncIterable
 
 from Crypto.Cipher import AES
 from Crypto.Hash import HMAC, SHA1
@@ -147,12 +147,12 @@ def stream_zip(files: Iterable[Tuple[Any, Any, Any, Any, Any]], chunk_size: int=
         zip_64_central_directory = False
         offset = 0
 
-        def _(chunk):
+        def _(chunk: bytes) -> Iterable[bytes]:
             nonlocal offset
             offset += len(chunk)
             yield chunk
 
-        def _raise_if_beyond(offset, maximum, exception_class):
+        def _raise_if_beyond(offset: int, maximum: int, exception_class: Type[Exception]) -> None:
             if offset > maximum:
                 raise exception_class()
 
@@ -163,7 +163,7 @@ def stream_zip(files: Iterable[Tuple[Any, Any, Any, Any, Any]], chunk_size: int=
             # we iterate over them
 
             return_value = None
-            def with_return_value():
+            def with_return_value() -> Iterable[bytes]:
                 nonlocal return_value
                 return_value = yield from gen
 
@@ -324,7 +324,7 @@ def stream_zip(files: Iterable[Tuple[Any, Any, Any, Any, Any]], chunk_size: int=
                 file_offset,
             ), name_encoded, extra
 
-        def _zip_data(chunks, _get_compress_obj, max_uncompressed_size, max_compressed_size):
+        def _zip_data(chunks, _get_compress_obj, max_uncompressed_size, max_compressed_size) -> Iterable[bytes]:
             uncompressed_size = 0
             compressed_size = 0
             crc_32 = zlib.crc32(b'')
@@ -462,14 +462,14 @@ def stream_zip(files: Iterable[Tuple[Any, Any, Any, Any, Any]], chunk_size: int=
                file_offset,
             ), name_encoded, extra
 
-        def _no_compression_buffered_data_size_crc_32(chunks, maximum_size):
+        def _no_compression_buffered_data_size_crc_32(chunks, maximum_size) -> Tuple[Iterable[bytes], int, int]:
             # We cannot have a data descriptor, and so have to be able to determine the total
             # length and CRC32 before output ofchunks to client code
 
             size = 0
             crc_32 = zlib.crc32(b'')
 
-            def _chunks():
+            def _chunks() -> Iterable[bytes]:
                 nonlocal size, crc_32
                 for chunk in chunks:
                     size += len(chunk)
@@ -588,7 +588,7 @@ def stream_zip(files: Iterable[Tuple[Any, Any, Any, Any, Any]], chunk_size: int=
                file_offset,
             ), name_encoded, extra
 
-        def _no_compression_streamed_data(chunks, uncompressed_size, crc_32, maximum_size):
+        def _no_compression_streamed_data(chunks, uncompressed_size, crc_32, maximum_size) -> Iterable[bytes]:
             actual_crc_32 = zlib.crc32(b'')
             size = 0
             for chunk in chunks:
@@ -717,7 +717,7 @@ def stream_zip(files: Iterable[Tuple[Any, Any, Any, Any, Any]], chunk_size: int=
     yield from evenly_sized(zipped_chunks)
 
 
-async def async_stream_zip(member_files, *args, **kwargs):
+async def async_stream_zip(member_files, *args, **kwargs) -> AsyncIterable[bytes]:
 
     async def to_async_iterable(sync_iterable):
         # asyncio.to_thread is not available until Python 3.9, and StopIteration doesn't get
