@@ -48,6 +48,9 @@ jobs:
       - name: "Install python dependencies"
         run: |
           pip install ".[ci]"
+      - name: "Run type checking"
+        run: |
+          mypy stream_zip.py
       - name: "Run tests"
         run: |
           pytest --cov
