@@ -1,4 +1,5 @@
 from collections import deque
+from datetime import datetime
 from struct import Struct
 import asyncio
 import secrets
@@ -10,6 +11,7 @@ from Crypto.Hash import HMAC, SHA1
 from Crypto.Util import Counter
 from Crypto.Protocol.KDF import PBKDF2
 
+#################
 # Private methods
 
 _NO_COMPRESSION_BUFFERED_32 = object()
@@ -22,38 +24,43 @@ _ZIP_64 = object()
 _AUTO_UPGRADE_CENTRAL_DIRECTORY = object()
 _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY = object()
 
-def __NO_COMPRESSION_BUFFERED_32(offset, default_get_compressobj):
+_MethodReturnValue = Tuple[object, object, Callable[[], 'zlib._Compress'], Optional[int], Optional[int]]
+
+def __NO_COMPRESSION_BUFFERED_32(offset: int, default_get_compressobj: Callable[[], 'zlib._Compress']) -> _MethodReturnValue:
     return _NO_COMPRESSION_BUFFERED_32, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj, None, None
 
-def __NO_COMPRESSION_BUFFERED_64(offset, default_get_compressobj):
+def __NO_COMPRESSION_BUFFERED_64(offset, default_get_compressobj: Callable[[], 'zlib._Compress']) -> _MethodReturnValue:
     return _NO_COMPRESSION_BUFFERED_64, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj, None, None
 
-def __NO_COMPRESSION_STREAMED_32(uncompressed_size, crc_32):
+def __NO_COMPRESSION_STREAMED_32(uncompressed_size, crc_32) -> 'Method':
     def method_compressobj(offset, default_get_compressobj):
         return _NO_COMPRESSION_STREAMED_32, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj, uncompressed_size, crc_32
     return method_compressobj
 
-def __NO_COMPRESSION_STREAMED_64(uncompressed_size, crc_32):
+def __NO_COMPRESSION_STREAMED_64(uncompressed_size, crc_32) -> 'Method':
     def method_compressobj(offset, default_get_compressobj):
         return _NO_COMPRESSION_STREAMED_64, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj, uncompressed_size, crc_32
     return method_compressobj
 
+################
 # Public methods
 
-def NO_COMPRESSION_32(uncompressed_size, crc_32):
+Method = Callable[[int, Callable[[], 'zlib._Compress']], _MethodReturnValue]
+
+def NO_COMPRESSION_32(uncompressed_size: int, crc_32: int) -> Method:
     return __NO_COMPRESSION_STREAMED_32(uncompressed_size, crc_32)
 
-def NO_COMPRESSION_64(uncompressed_size, crc_32):
+def NO_COMPRESSION_64(uncompressed_size: int, crc_32: int) -> Method:
     return __NO_COMPRESSION_STREAMED_64(uncompressed_size, crc_32)
 
-def ZIP_32(offset, default_get_compressobj):
+def ZIP_32(offset: int, default_get_compressobj: Callable[[], 'zlib._Compress']) ->_MethodReturnValue:
     return _ZIP_32, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj, None, None
 
-def ZIP_64(offset, default_get_compressobj):
+def ZIP_64(offset: int, default_get_compressobj: Callable[[], 'zlib._Compress']) -> _MethodReturnValue:
     return _ZIP_64, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj, None, None
 
-def ZIP_AUTO(uncompressed_size, level=9):
-    def method_compressobj(offset, default_get_compressobj):
+def ZIP_AUTO(uncompressed_size: int, level: int=9) -> Method:
+    def method_compressobj(offset: int, default_get_compressobj: Callable[[], 'zlib._Compress']):
         # The limit of 4293656841 is calculated using the logic from a zlib function
         # https://github.com/madler/zlib/blob/04f42ceca40f73e2978b50e93806c2a18c1281fc/deflate.c#L696
         # Specifically, worked out by assuming the compressed size of a stream cannot be bigger than
@@ -71,7 +78,7 @@ def ZIP_AUTO(uncompressed_size, level=9):
     return method_compressobj
 
 
-def stream_zip(files: Iterable[Tuple[Any, Any, Any, Any, Any]], chunk_size: int=65536,
+def stream_zip(files: Iterable[Tuple[str, datetime, int, Method, Iterable[bytes]]], chunk_size: int=65536,
                get_compressobj=lambda: zlib.compressobj(wbits=-zlib.MAX_WBITS, level=9),
                extended_timestamps: bool=True,
                password: Optional[str]=None,
