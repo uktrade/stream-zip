@@ -3,6 +3,7 @@ from struct import Struct
 import asyncio
 import secrets
 import zlib
+from typing import Any, Iterable, Tuple, Optional, Deque
 
 from Crypto.Cipher import AES
 from Crypto.Hash import HMAC, SHA1
@@ -70,14 +71,14 @@ def ZIP_AUTO(uncompressed_size, level=9):
     return method_compressobj
 
 
-def stream_zip(files, chunk_size=65536,
+def stream_zip(files: Iterable[Tuple[Any, Any, Any, Any, Any]], chunk_size: int=65536,
                get_compressobj=lambda: zlib.compressobj(wbits=-zlib.MAX_WBITS, level=9),
-               extended_timestamps=True,
-               password=None,
+               extended_timestamps: bool=True,
+               password: Optional[str]=None,
                get_crypto_random=lambda num_bytes: secrets.token_bytes(num_bytes),
-):
+) -> Iterable[bytes]:
 
-    def evenly_sized(chunks):
+    def evenly_sized(chunks: Iterable[bytes]) -> Iterable[bytes]:
         chunk = b''
         offset = 0
         it = iter(chunks)
@@ -104,7 +105,7 @@ def stream_zip(files, chunk_size=65536,
                 break
             yield block
 
-    def get_zipped_chunks_uneven():
+    def get_zipped_chunks_uneven() -> Iterable[bytes]:
         local_header_signature = b'PK\x03\x04'
         local_header_struct = Struct('<HHH4sIIIHH')
 
@@ -140,7 +141,7 @@ def stream_zip(files, chunk_size=65536,
         data_descriptor_flag = 0b0000000000001000
         utf8_flag = 0b0000100000000000
 
-        central_directory = deque()
+        central_directory: Deque[Tuple[bytes, bytes, bytes]] = deque()
         central_directory_size = 0
         central_directory_start_offset = 0
         zip_64_central_directory = False
