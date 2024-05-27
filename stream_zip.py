@@ -56,7 +56,7 @@ class _NO_COMPRESSION_32_TYPE(Method):
     def _get(self, offset: int, default_get_compressobj: _CompressObjGetter) -> _MethodTuple:
         return _NO_COMPRESSION_BUFFERED_32, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj, 0, 0
 
-    def __call__(self, uncompressed_size: int, crc_32: int, *args: Any, **kwarg: Any) -> Method:
+    def __call__(self, uncompressed_size: int, crc_32: int) -> Method:
         class _NO_COMPRESSION_32_TYPE_STREAMED_TYPE(Method):
             def _get(self, offset: int, default_get_compressobj: _CompressObjGetter) -> _MethodTuple:
                 return _NO_COMPRESSION_STREAMED_32, _NO_AUTO_UPGRADE_CENTRAL_DIRECTORY, default_get_compressobj, uncompressed_size, crc_32
