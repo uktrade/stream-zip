@@ -379,7 +379,7 @@ def stream_zip(files: Iterable[MemberFile], chunk_size: int=65536,
             ), name_encoded, extra
 
         def _zip_data(chunks: Iterable[bytes], _get_compress_obj: _CompressObjGetter,
-                      max_uncompressed_size: int, max_compressed_size: int) -> Generator[bytes, None, Any]:
+                      max_uncompressed_size: int, max_compressed_size: int) -> Generator[bytes, None, Tuple[int, int, int]]:
             uncompressed_size = 0
             compressed_size = 0
             crc_32 = zlib.crc32(b'')
