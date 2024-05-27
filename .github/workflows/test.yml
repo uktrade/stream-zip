@@ -50,7 +50,7 @@ jobs:
           pip install ".[ci]"
       - name: "Run type checking"
         run: |
-          mypy stream_zip.py --strict
+          mypy stream_zip --strict
       - name: "Run tests"
         run: |
           pytest --cov
