@@ -251,7 +251,7 @@ def stream_zip(files: Iterable[MemberFile], chunk_size: int=65536,
                 mod_at_unix_extra: bytes, aes_extra: bytes, external_attr: int, uncompressed_size: int, crc_32: int,
                 crc_32_mask: int, _get_compress_obj: _CompressObjGetter, encryption_func: Callable[[Generator[bytes, None, Any]], Generator[bytes, None, Any]],
                 chunks: Iterable[bytes],
-        ) -> Generator[bytes, None, Any]:
+        ) -> Generator[bytes, None, Tuple[bytes, bytes, bytes]]:
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
@@ -323,7 +323,7 @@ def stream_zip(files: Iterable[MemberFile], chunk_size: int=65536,
                 mod_at_unix_extra: bytes, aes_extra: bytes, external_attr: int, uncompressed_size: int, crc_32: int,
                 crc_32_mask: int, _get_compress_obj: _CompressObjGetter, encryption_func: Callable[[Generator[bytes, None, Any]], Generator[bytes, None, Any]],
                 chunks: Iterable[bytes],
-        ) -> Generator[bytes, None, Any]:
+        ) -> Generator[bytes, None, Tuple[bytes, bytes, bytes]]:
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffff, exception_class=OffsetOverflowError)
@@ -411,7 +411,7 @@ def stream_zip(files: Iterable[MemberFile], chunk_size: int=65536,
                 mod_at_unix_extra: bytes, aes_extra: bytes, external_attr: int, uncompressed_size: int, crc_32: int,
                 crc_32_mask: int, _get_compress_obj: _CompressObjGetter, encryption_func: Callable[[Generator[bytes, None, Any]], Generator[bytes, None, Any]],
                 chunks: Iterable[bytes],
-        ) -> Generator[bytes, None, Any]:
+        ) -> Generator[bytes, None, Tuple[bytes, bytes, bytes]]:
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
@@ -478,7 +478,7 @@ def stream_zip(files: Iterable[MemberFile], chunk_size: int=65536,
                 mod_at_unix_extra: bytes, aes_extra: bytes, external_attr: int, uncompressed_size: int, crc_32: int,
                 crc_32_mask: int, _get_compress_obj: _CompressObjGetter, encryption_func: Callable[[Generator[bytes, None, Any]], Generator[bytes, None, Any]],
                 chunks: Iterable[bytes],
-        ) -> Generator[bytes, None, Any]:
+        ) -> Generator[bytes, None, Tuple[bytes, bytes, bytes]]:
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffff, exception_class=OffsetOverflowError)
@@ -551,7 +551,7 @@ def stream_zip(files: Iterable[MemberFile], chunk_size: int=65536,
                 mod_at_unix_extra: bytes, aes_extra: bytes, external_attr: int, uncompressed_size: int, crc_32: int,
                 crc_32_mask: int, _get_compress_obj: _CompressObjGetter, encryption_func: Callable[[Generator[bytes, None, Any]], Generator[bytes, None, Any]],
                 chunks: Iterable[bytes],
-        ) -> Generator[bytes, None, Any]:
+        ) -> Generator[bytes, None, Tuple[bytes, bytes, bytes]]:
             file_offset = offset
 
             _raise_if_beyond(file_offset, maximum=0xffffffffffffffff, exception_class=OffsetOverflowError)
