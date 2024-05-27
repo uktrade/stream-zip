@@ -49,5 +49,5 @@ ci = [
 
 [tool.hatch.build]
 include = [
-  "stream_zip.py",
+  "stream_zip",
 ]
