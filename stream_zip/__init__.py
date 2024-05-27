@@ -41,6 +41,7 @@ _MethodTuple = Tuple[
 
 # A "Method" is an instance of a class that has a _get function that returns a _MethodTuple
 class Method(ABC):
+    @abstractmethod
     def _get(self, offset: int, default_get_compressobj: _CompressObjGetter) -> _MethodTuple:
         pass
 
