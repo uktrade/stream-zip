@@ -109,6 +109,7 @@ ZIP_AUTO = _ZIP_AUTO_TYPE()
 
 # Each member file is a tuple of its name, last modified date, file mode, Method, and its bytes
 MemberFile = Tuple[str, datetime, int, Method, Iterable[bytes]]
+AsyncMemberFile = Tuple[str, datetime, int, Method, AsyncIterable[bytes]]
 
 
 def stream_zip(files: Iterable[MemberFile], chunk_size: int=65536,
@@ -789,7 +790,13 @@ def stream_zip(files: Iterable[MemberFile], chunk_size: int=65536,
     yield from evenly_sized(zipped_chunks)
 
 
-async def async_stream_zip(member_files: AsyncIterable[MemberFile], *args: Any, **kwargs: Any) -> AsyncIterable[bytes]:
+async def async_stream_zip(
+    files: AsyncIterable[AsyncMemberFile], chunk_size: int=65536,
+    get_compressobj: _CompressObjGetter=lambda: zlib.compressobj(wbits=-zlib.MAX_WBITS, level=9),
+    extended_timestamps: bool=True,
+    password: Optional[str]=None,
+    get_crypto_random: Callable[[int], bytes]=lambda num_bytes: secrets.token_bytes(num_bytes),
+) -> AsyncIterable[bytes]:
 
     async def to_async_iterable(sync_iterable: Iterable[Any]) -> AsyncIterable[Any]:
         # asyncio.to_thread is not available until Python 3.9, and StopIteration doesn't get
@@ -825,10 +832,16 @@ async def async_stream_zip(member_files: AsyncIterable[MemberFile], *args: Any, 
     loop = asyncio.get_event_loop()
     sync_member_files = (
         member_file[0:4] + (to_sync_iterable(member_file[4],),)
-        for member_file in to_sync_iterable(member_files)
+        for member_file in to_sync_iterable(files)
     )
 
-    async for chunk in to_async_iterable(stream_zip(sync_member_files, *args, **kwargs)):
+    async for chunk in to_async_iterable(stream_zip(
+            files=sync_member_files, chunk_size=chunk_size,
+            get_compressobj=get_compressobj,
+            extended_timestamps=extended_timestamps,
+            password=password,
+            get_crypto_random=get_crypto_random,
+    )):
         yield chunk
 
 
