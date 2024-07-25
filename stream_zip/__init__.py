@@ -98,7 +98,7 @@ class _ZIP_AUTO_TYPE():
 
 
 class CRCActual:
-    def __init__(self):
+    def __init__(self) -> None:
         self.crc_32 = 0
 
 ###############################
