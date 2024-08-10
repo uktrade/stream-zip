@@ -8,7 +8,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v3
         with:
@@ -17,6 +17,14 @@ jobs:
       - name: Update version in pyproject.toml from current git tag
         run: >-
           sed -i "s/0\\.0\\.0\\.dev0/${GITHUB_REF/refs\/tags\/v/}/g" pyproject.toml
+
+      # This makes it a touch easier/more robust to package for Debian
+      # See https://github.com/uktrade/stream-zip/issues/136
+      - name: Update release to include source code with version
+        run: |
+          tar --exclude='./.git' -czvf "${GITHUB_REF_NAME}.tar.gz" .
+          gh release upload "${GITHUB_REF_NAME}" "${GITHUB_REF_NAME}.tar.gz" "Source code (with release version)"
+          rm "${GITHUB_REF_NAME}.tar.gz"
 
       - run: |
           pip install build
