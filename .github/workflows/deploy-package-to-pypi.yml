@@ -26,6 +26,8 @@ jobs:
           tar --exclude='.git' --exclude='${GITHUB_REF_NAME}.tar.gz' -czvf "${GITHUB_REF_NAME}.tar.gz" .
           gh release upload "${GITHUB_REF_NAME}" "${GITHUB_REF_NAME}.tar.gz" "Source code (with release version)"
           rm "${GITHUB_REF_NAME}.tar.gz"
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - run: |
           pip install build
