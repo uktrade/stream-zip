@@ -3,10 +3,10 @@ from io import BytesIO
 import asyncio
 import contextlib
 import os
-import platform
 import secrets
 import stat
 import subprocess
+import sys
 import zlib
 from tempfile import TemporaryDirectory
 from struct import Struct
@@ -1388,7 +1388,7 @@ def test_async_stream_zip_does_stream():
 
 
 @pytest.mark.skipif(
-    tuple(int(v) for v in platform.python_version().split('.')) < (3,7,0),
+    sys.version_info[:2] < (3,7,0),
     reason="contextvars are not supported before Python 3.7.0",
 )
 def test_copy_of_context_variable_available_in_iterable():
