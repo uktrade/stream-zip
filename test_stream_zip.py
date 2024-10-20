@@ -143,13 +143,34 @@ def test_with_stream_unzip_with_no_compresion_known_crc_32(method):
         NO_COMPRESSION_64,
     ],
 )
+def test_with_stream_unzip_with_no_compresion_no_crc_32(method):
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
+    mode = stat.S_IFREG | 0o600
+
+    def files():
+        yield 'file-1', now, mode, method(20000, 0), (b'a' * 10000, b'b' * 10000)
+        yield 'file-2', now, mode, method(2, 0), (b'c', b'd')
+
+    assert [(b'file-1', 20000, b'a' * 10000 + b'b' * 10000), (b'file-2', 2, b'cd')] == [
+        (name, size, b''.join(chunks))
+        for name, size, chunks in stream_unzip(stream_zip(files()))
+    ]
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        NO_COMPRESSION_32,
+        NO_COMPRESSION_64,
+    ],
+)
 def test_with_stream_unzip_with_no_compresion_bad_crc_32(method):
     now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
     def files():
         yield 'file-1', now, mode, method(20000, zlib.crc32(b'a' * 10000 + b'b' * 10000)), (b'a' * 10000, b'b' * 10000)
-        yield 'file-1', now, mode, method(1, zlib.crc32(b'')), (b'a',)
+        yield 'file-1', now, mode, method(1, zlib.crc32(b'x')), (b'a',)
 
     with pytest.raises(CRC32IntegrityError):
         for name, size, chunks in stream_unzip(stream_zip(files())):
