@@ -9,18 +9,18 @@ This checklist is designed to make it easier to improve the security posture of 
 
 ## Checklist
 
-- [ ] [Setup the pre-commit hook framework](#setup-the-pre-commit-hook-framework)
-- [ ] [Setup custom properties on the repository](#setup-custom-properties-on-the-repository)
-- [ ] [Apply the correct github security policy](#apply-the-correct-github-security-policy)
-- [ ] [Ensure CODEOWNERS file exists](#ensure-codeowners-file-exists)
-- [ ] [Copy the SECURITY_CHECKLIST.md file](#copy-the-security_checklistmd-file)
-- [ ] [Review the GitHub CI/CD overview](#review-the-github-cicd-overview)
-- [ ] [Review the GitHub Safety Tips](#review-github-safety-tips)
-- [ ] [Add Steward to Repository access](#add-at-least-one-steward-to-repository-access)
-- [ ] [Create an admin team for the repository](#create-an-admin-team-for-the-repository)
-- [ ] [Review and limit maintainers with admin rights to the strict minimum](#review-and-limit-maintainers-with-admin-rights-to-the-strict-minimum)
-- [ ] [Review the Pull Request template](#review-pull-request-template)
-- [ ] [Review the SECURITY.md policy](#review-securitymd-policy)
+- [x] [Setup the pre-commit hook framework](#setup-the-pre-commit-hook-framework)
+- [x] [Setup custom properties on the repository](#setup-custom-properties-on-the-repository)
+- [x] [Apply the correct github security policy](#apply-the-correct-github-security-policy)
+- [x] [Ensure CODEOWNERS file exists](#ensure-codeowners-file-exists)
+- [x] [Copy the SECURITY_CHECKLIST.md file](#copy-the-security_checklistmd-file)
+- [x] [Review the GitHub CI/CD overview](#review-the-github-cicd-overview)
+- [x] [Review the GitHub Safety Tips](#review-github-safety-tips)
+- [x] [Add Steward to Repository access](#add-at-least-one-steward-to-repository-access)
+- [x] [Create an admin team for the repository](#create-an-admin-team-for-the-repository)
+- [x] [Review and limit maintainers with admin rights to the strict minimum](#review-and-limit-maintainers-with-admin-rights-to-the-strict-minimum)
+- [x] [Review the Pull Request template](#review-pull-request-template)
+- [x] [Review the SECURITY.md policy](#review-securitymd-policy)
 
 ## Setup the pre-commit hook framework
 
