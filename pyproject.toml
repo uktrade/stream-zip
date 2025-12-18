@@ -36,8 +36,8 @@ ci = [
     "stream-unzip==0.0.86",
     "pyzipper==0.3.6",
     # Type checking
-    "mypy==0.971",
-    'types-contextvars==2.4.7.3; python_version<"3.7"',
+    "mypy>=0.971",
+    'types-contextvars>=2.4.7.3; python_version<"3.9"',
 ]
 
 [project.urls]

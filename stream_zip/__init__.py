@@ -5,7 +5,7 @@ from struct import Struct
 import asyncio
 import secrets
 import zlib
-from typing import Any, Iterable, Generator, Tuple, Optional, Deque, Type, AsyncIterable, Callable
+from typing import Any, Iterable, Generator, Tuple, Optional, Deque, Type, AsyncIterable, Callable, TypeVar
 
 from Crypto.Cipher import AES
 from Crypto.Hash import HMAC, SHA1
@@ -819,12 +819,17 @@ async def async_stream_zip(
                 break
             yield value
 
-    def to_sync_iterable(async_iterable: AsyncIterable[Any]) -> Iterable[Any]:
+    T = TypeVar("T")
+
+    def to_sync_iterable(async_iterable: AsyncIterable[T]) -> Iterable[T]:
         # The built-in aiter and anext functions are not available until Python 3.10
         async_it = async_iterable.__aiter__()
+
+        async def get_next() -> T:
+            return await async_it.__anext__()
         while True:
             try:
-                value = asyncio.run_coroutine_threadsafe(async_it.__anext__(), loop).result()
+                value = asyncio.run_coroutine_threadsafe(get_next(), loop).result()
             except StopAsyncIteration:
                 break
             yield value
