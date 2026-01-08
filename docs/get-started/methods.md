@@ -1,5 +1,9 @@
 ---
 layout: sub-navigation
+sectionKey: Get started
+caption: Get started
+eleventyNavigation:
+    parent: Get started
 order: 4
 title: Methods
 ---

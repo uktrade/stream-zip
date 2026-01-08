@@ -1,7 +1,8 @@
 ---
 layout: sub-navigation
+sectionKey: Contributing
 order: 10
-title: How to contribute
+title: Contributing
 ---
 
 In most cases to contribute you will need a [GitHub account](https://github.com/join).
