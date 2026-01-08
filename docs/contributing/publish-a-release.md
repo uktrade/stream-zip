@@ -1,5 +1,9 @@
 ---
 layout: sub-navigation
+sectionKey: Contributing
+caption: Contributing
+eleventyNavigation:
+    parent: Contributing
 order: 11
 title: How to publish a release
 ---

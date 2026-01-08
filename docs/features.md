@@ -1,10 +1,11 @@
 ---
 layout: sub-navigation
+sectionKey: Features
 order: 2
 title: Features
 ---
 
-In addition to being memory efficient (with some [limitations](/get-started/#limitations)) stream-zip:
+In addition to being memory efficient (with some [limitations](/features/limitations/)) stream-zip:
 
 - Constructs ZIP files that can be stream unzipped, for example by [stream-unzip](https://stream-unzip.docs.trade.gov.uk/)
 
