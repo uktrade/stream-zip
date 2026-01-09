@@ -14,6 +14,8 @@ export default function(eleventyConfig) {
         html: fs.readFileSync('./docs/assets/dit-logo.svg', {encoding: 'utf8'})
       },
     },
+    // This is documented as needing to be a full URL rather than a path
+    opengraphImageUrl: 'https://stream-zip.docs.trade.gov.uk/assets/dbt-social.jpg',
     titleSuffix: serviceName,
     showBreadcrumbs: false,
     serviceNavigation: {
