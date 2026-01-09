@@ -14,6 +14,7 @@ export default function(eleventyConfig) {
         html: fs.readFileSync('./docs/assets/dit-logo.svg', {encoding: 'utf8'})
       },
     },
+    titleSuffix: serviceName,
     showBreadcrumbs: false,
     serviceNavigation: {
       serviceName,
