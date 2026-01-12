@@ -37,6 +37,7 @@ export default function(eleventyConfig) {
       ]
     },
     footer: {
+      logo: false,
       meta: {
         items: [
           {
