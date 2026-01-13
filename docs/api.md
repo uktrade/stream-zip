@@ -15,8 +15,8 @@ stream-zip exposes a single Python module: `stream_zip`.
 
 The `stream_zip` module exposes two functions:
 
-- `stream_unzip.stream_zip`
-- `stream_unzip.async_stream_zip`
+- [`stream_unzip.stream_zip`](/api/functions/#stream-zip-stream-zip)
+- [`stream_unzip.async_stream_zip`](/api/functions/#stream-zip-async-stream-zip)
 
 
 ## Methods
