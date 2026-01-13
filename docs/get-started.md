@@ -30,8 +30,8 @@ Some understanding of ZIP files is needed to use stream-zip. A ZIP file is a col
 
 1. File name
 2. Modification time
-3. Mode (File type and permissions)
-4. Method (Compression mechanism)
+3. Mode (file type and permissions)
+4. Method (compression mechanism)
 5. Binary contents
 
 stream-unzip does not offer defaults for any of these 5 properties.
@@ -51,7 +51,7 @@ member_files = (
         'my-file-1.txt',     # File name
         datetime.now(),      # Modification time
         S_IFREG | 0o600,     # Mode - regular file that owner can read and write
-        ZIP_32,              # ZIP_32 has good support but limited to 4GiB
+        ZIP_32,              # ZIP_32 has good support but is limited to 4GiB
         (b'Some bytes 1',),  # Iterable of chunks of contents
     ),
     (
@@ -62,7 +62,7 @@ member_files = (
         (b'Some bytes 2',),
     ),
 )
-zipped_chunks = stream_zip(member_files):
+zipped_chunks = stream_zip(member_files)
 
 for zipped_chunk in zipped_chunks:
     print(zipped_chunk)
@@ -115,7 +115,7 @@ for zipped_chunk in zipped_chunks:
     print(zipped_chunk)
 ```
 
-This pattern of generators is typical for stream-unzip. Depending on how the generators are defined, it allows avoiding loading all the bytes of member files into memory at once.
+This pattern of generators is typical for stream-zip. Depending on how the generators are defined, it allows avoiding loading all the bytes of member files into memory at once.
 
 
 ## Symbolic links

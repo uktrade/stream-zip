@@ -40,4 +40,4 @@ More importantly, AE-2 has flaws. These include:
 >
 - A higher risk of information leakage when there's a higher number of member files in the ZIP encrypted with the same password, as stream-zip does. Although AE-2 with AES-256 likely mitigates this enough for all situations but the extremely risk averse that also have an extremely high number of member files.
 
-See ["Attacking and Repairing the WinZip Encryption Scheme" by Tadayoshi Kohno](https://homes.cs.washington.edu/~yoshi/papers/WinZip/winzip.pdf) and [fgrieu's answer to a question about WinZip's AE-1 and AE-2 on Crytography Stack Exchange](https://crypto.stackexchange.com/a/109269/113464) for more information.
+See ["Attacking and Repairing the WinZip Encryption Scheme" by Tadayoshi Kohno](https://homes.cs.washington.edu/~yoshi/papers/WinZip/winzip.pdf) and [fgrieu's answer to a question about WinZip's AE-1 and AE-2 on Cryptography Stack Exchange](https://crypto.stackexchange.com/a/109269/113464) for more information.
