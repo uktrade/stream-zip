@@ -4,7 +4,7 @@ sectionKey: Get started
 caption: Get started
 eleventyNavigation:
     parent: Get started
-order: 6
+order: 4
 title: Output examples
 ---
 
