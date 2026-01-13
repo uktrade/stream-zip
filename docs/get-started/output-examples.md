@@ -9,14 +9,14 @@ title: Output examples
 ---
 
 
-This page contains examples to show how the output of stream-zip can be manipulated for different cases. It is likely you will have to modifiy them for your specific needs.
+This page contains examples to show how the output of stream-zip can be manipulated for different cases. It is likely you will have to modify them for your specific needs.
 
-The examples assume an iterable of member files is available in the variable `member_files`. See [Get started](/get-started/) for a guide on how to construct this, or [Input examples](/input-examples/) for examples.
+The examples assume an iterable of member files is available in the variable `member_files`. See [Get started](/get-started/) for a guide on how to construct this, or [Input examples](/get-started/input-examples/) for examples.
 
 
 ## Local file
 
-Saving the ZIP to a local file can be done wtih Python's built-in `open` function.
+Saving the ZIP to a local file can be done with Python's built-in `open` function.
 
 ```python
 from stream_zip import stream_zip
@@ -58,7 +58,7 @@ s3 = boto3.client('s3')
 s3.upload_fileobj(
     zipped_chunks_obj, 'mybucket', 'mykey',
     # Since we're streaming the final total size is unknown, so we have to tell boto3 what part
-    # size to use to accomodate the entire file - S3 has a hard coded limit of 10000 parts
+    # size to use to accommodate the entire file - S3 has a hard coded limit of 10000 parts
     # In this example we choose a part size of 200MB, so 2TB maximum final object size
     Config=TransferConfig(multipart_chunksize=1024 * 1024 * 200),
 )
@@ -67,4 +67,4 @@ s3.upload_fileobj(
 
 ## Submit your own
 
-Pull requests (PRs) that propose changes to this page are especially welcome. PRs can be made at the [source of this page](https://github.com/uktrade/stream-zip/blob/main/docs/output-examples.md). Submitting a PR requires a [GitHub account](https://github.com/join) and knowledge of the [GitHub fork and PR process](https://docs.github.com/en/pull-requests).
+Pull requests (PRs) that propose changes to this page are especially welcome. PRs can be made at the [source of this page](https://github.com/uktrade/stream-zip/blob/main/docs/get-started/output-examples.md). Submitting a PR requires a [GitHub account](https://github.com/join) and knowledge of the [GitHub fork and PR process](https://docs.github.com/en/pull-requests).
