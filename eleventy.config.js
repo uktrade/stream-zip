@@ -27,8 +27,8 @@ export default function(eleventyConfig) {
           href: '/get-started/'
         },
         {
-          text: 'Features',
-          href: '/features/'
+          text: 'API reference',
+          href: '/api/'
         },
         {
           text: 'Contributing',

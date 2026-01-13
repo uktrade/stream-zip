@@ -1,7 +1,10 @@
 ---
 layout: sub-navigation
-sectionKey: Features
-order: 2
+sectionKey: Get started
+eleventyNavigation:
+    parent: Get started
+caption: Get started
+order: 1
 title: Features
 ---
 

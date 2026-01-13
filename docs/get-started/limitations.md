@@ -1,10 +1,10 @@
 ---
 layout: sub-navigation
-sectionKey: Features
+sectionKey: Get started
 eleventyNavigation:
-    parent: Features
-caption: Features
-order: 1
+    parent: Get started
+caption: Get started
+order: 2
 title: Limitations
 ---
 
