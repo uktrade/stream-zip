@@ -1,11 +1,11 @@
 ---
 layout: sub-navigation
-sectionKey: Get started
-caption: Get started
+sectionKey: API reference
+caption: API reference
 eleventyNavigation:
-    parent: Get started
+    parent: API reference
 order: 8
-title: Exceptions
+title: Exception hierarchy
 ---
 
 

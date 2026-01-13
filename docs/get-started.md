@@ -150,7 +150,7 @@ It is not required to have a directory member file in order to have files in tha
 
 ## Methods
 
-Each member file is compressed with a method that must be specified in client code. See [Methods](/methods/) for an explanation of each.
+Each member file is compressed with a method that must be specified in client code. See [Methods](/api/methods/) for an explanation of each.
 
 
 ## Stream unzipping
