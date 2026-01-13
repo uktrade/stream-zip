@@ -5,7 +5,7 @@ caption: API reference
 eleventyNavigation:
     parent: API reference
 order: 4
-title: Methods
+title: Compression methods
 ---
 
 
