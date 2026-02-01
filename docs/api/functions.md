@@ -33,7 +33,7 @@ def stream_zip(
 | Name                | Type                           | Description
 | --------------------| -------------------------------| ------------------------------------------
 | files               | Iterable[MemberFile]           | The member files of the ZIP
-| chunk_size          | int                            | How many bytes of each member file to fetch before compressing
+| chunk_size          | int                            | Maximum `bytes` instance length yielded to client code
 | get_compressobj     | Callable[[], 'zlib._Compress'] | A function returning a [Python zlib compression object](https://docs.python.org/3/library/zlib.html#zlib.compressobj) |
 | password            | Optional[str]                  | The password used to encrypt all the member files with AES-256 encryption adhering to the Winzip AE-2 specification - see [Password protection](/get-started/password-protection/)
 | extended_timestamps | bool                           | Whether to save extended timestamps in the ZIP file
@@ -82,7 +82,7 @@ async def async_stream_zip(
 | Name                | Type                           | Description
 | --------------------| -------------------------------| ------------------------------------------
 | files               | AsyncIterable[AsyncMemberFile] | The member files of the ZIP
-| chunk_size          | int                            | How many bytes of each member file to fetch before compressing
+| chunk_size          | int                            | Maximum `bytes` instance length yielded to client code
 | get_compressobj     | Callable[[], 'zlib._Compress'] | A function returning a [Python zlib compression object](https://docs.python.org/3/library/zlib.html#zlib.compressobj) |
 | password            | Optional[str]                  | The password used to encrypt all the member files with AES-256 encryption adhering to the Winzip AE-2 specification - see [Password protection](/get-started/password-protection/)
 | extended_timestamps | bool                           | Whether to save extended timestamps in the ZIP file

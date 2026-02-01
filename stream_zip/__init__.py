@@ -96,6 +96,13 @@ class _ZIP_AUTO_TYPE():
 
         return _ZIP_AUTO_TYPE_INNER()
 
+# Sentinal object as a command that output buffer be flushed
+# Extends from bytes to pass type checking
+class _Flusher(bytes):
+    pass
+
+_flush = _Flusher()
+
 
 ###############################
 # Public sentinel objects/types
@@ -135,6 +142,9 @@ def stream_zip(files: Iterable[MemberFile], chunk_size: int=65536,
                         break
                     else:
                         offset = 0
+                        if chunk is _flush:
+                            chunk = b''
+                            break
                 to_yield = min(num, len(chunk) - offset)
                 offset = offset + to_yield
                 num -= to_yield
@@ -280,6 +290,7 @@ def stream_zip(files: Iterable[MemberFile], chunk_size: int=65536,
             ))
             yield from _(name_encoded)
             yield from _(extra)
+            yield _flush
 
             uncompressed_size, raw_compressed_size, crc_32 = yield from encryption_func(_zip_data(
                 chunks,
@@ -347,6 +358,7 @@ def stream_zip(files: Iterable[MemberFile], chunk_size: int=65536,
             ))
             yield from _(name_encoded)
             yield from _(extra)
+            yield _flush
 
             uncompressed_size, raw_compressed_size, crc_32 = yield from encryption_func(_zip_data(
                 chunks,
@@ -444,6 +456,7 @@ def stream_zip(files: Iterable[MemberFile], chunk_size: int=65536,
             ))
             yield from _(name_encoded)
             yield from _(extra)
+            yield _flush
 
             yield from encryption_func((chunk for chunk in chunks))
 
@@ -506,6 +519,7 @@ def stream_zip(files: Iterable[MemberFile], chunk_size: int=65536,
             ))
             yield from _(name_encoded)
             yield from _(extra)
+            yield _flush
 
             yield from encryption_func((chunk for chunk in chunks))
 
@@ -582,6 +596,7 @@ def stream_zip(files: Iterable[MemberFile], chunk_size: int=65536,
             ))
             yield from _(name_encoded)
             yield from _(extra)
+            yield _flush
 
             yield from encryption_func(_no_compression_streamed_data(chunks, uncompressed_size, crc_32, 0xffffffffffffffff))
 
@@ -642,6 +657,7 @@ def stream_zip(files: Iterable[MemberFile], chunk_size: int=65536,
             ))
             yield from _(name_encoded)
             yield from _(extra)
+            yield _flush
 
             yield from encryption_func(_no_compression_streamed_data(chunks, uncompressed_size, crc_32, 0xffffffff))
 
@@ -716,7 +732,7 @@ def stream_zip(files: Iterable[MemberFile], chunk_size: int=65536,
                 (99, 28, aes_flag, aes_extra_struct.pack(aes_extra_signature, 7, 2, b'AE', 3, raw_compression), 0, _get_encrypt_aes(password)) if password is not None else \
                 (raw_compression, 0, 0, b'', 0xffffffff, _encrypt_dummy)
 
-            central_directory_header_entry, name_encoded, extra = yield from data_func(compression, aes_size_increase, aes_flags, name_encoded, mod_at_ms_dos, mod_at_unix_extra, aes_extra, external_attr, uncompressed_size, crc_32, crc_32_mask, _get_compress_obj, encryption_func, evenly_sized(chunks))
+            central_directory_header_entry, name_encoded, extra = yield from data_func(compression, aes_size_increase, aes_flags, name_encoded, mod_at_ms_dos, mod_at_unix_extra, aes_extra, external_attr, uncompressed_size, crc_32, crc_32_mask, _get_compress_obj, encryption_func, chunks)
             central_directory_size += len(central_directory_header_signature) + len(central_directory_header_entry) + len(name_encoded) + len(extra)
             central_directory.append((central_directory_header_entry, name_encoded, extra))
 
@@ -786,8 +802,7 @@ def stream_zip(files: Iterable[MemberFile], chunk_size: int=65536,
                 0, # ZIP_32 file comment length
             ))
 
-    zipped_chunks = get_zipped_chunks_uneven()
-    yield from evenly_sized(zipped_chunks)
+    yield from evenly_sized(get_zipped_chunks_uneven())
 
 
 async def async_stream_zip(

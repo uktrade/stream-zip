@@ -1,3 +1,4 @@
+from collections import Counter
 from datetime import datetime, timezone, timedelta
 from io import BytesIO
 import asyncio
@@ -152,7 +153,7 @@ def test_with_stream_unzip_with_no_compresion_bad_crc_32(method):
         yield 'file-1', now, mode, method(1, zlib.crc32(b'')), (b'a',)
 
     with pytest.raises(CRC32IntegrityError):
-        for name, size, chunks in stream_unzip(stream_zip(files())):
+        for _ in stream_zip(files()):
             pass
 
 
@@ -173,7 +174,8 @@ def test_with_stream_unzip_with_no_compresion_bad_size(method):
 
     with pytest.raises(UncompressedSizeIntegrityError):
         for name, size, chunks in stream_unzip(stream_zip(files())):
-            pass
+            for _ in chunks:
+                pass
 
 
 def test_with_stream_unzip_auto_small():
@@ -762,8 +764,69 @@ def test_chunk_sizes():
             yield len(chunk)
 
     sizes = list(get_sizes())
-    assert set(sizes[:-1]) == {65536}
+    assert sizes[0] == 65
+    assert set(sizes[1:-1]) == {65536}
     assert sizes[-1] <= 65536
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        ZIP_32,
+        ZIP_64,
+        NO_COMPRESSION_64(1, 2547889144),
+        NO_COMPRESSION_32(1, 2547889144),
+    ],
+)
+def test_local_headers_flushed(method):
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
+    mode = stat.S_IFREG | 0o600
+
+    state = []
+
+    def data():
+        state.append('data')
+        yield b'-'
+
+    def files():
+        state.append('file')
+        yield 'file-1', now, mode, method, data()
+
+    for chunk in stream_zip(files()):
+        state.append('chunk')
+        if b'file-1' in chunk:
+            state.append('file-name')
+
+    assert state == ['file', 'chunk', 'file-name', 'data', 'chunk', 'file-name']
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        NO_COMPRESSION_64,
+        NO_COMPRESSION_32,
+    ],
+)
+def test_local_headers_flushed_buffered_data(method):
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
+    mode = stat.S_IFREG | 0o600
+
+    state = []
+
+    def data():
+        state.append('data')
+        yield b'-'
+
+    def files():
+        state.append('file')
+        yield 'file-1', now, mode, method, data()
+
+    for chunk in stream_zip(files()):
+        state.append('chunk')
+        if b'file-1' in chunk:
+            state.append('file-name')
+
+    assert state == ['file', 'data', 'chunk', 'file-name', 'chunk', 'file-name']
 
 
 @pytest.mark.parametrize(
@@ -1384,7 +1447,7 @@ def test_async_stream_zip_does_stream():
             state.append('out')
 
     asyncio.get_event_loop().run_until_complete(test())
-    assert state == ['in', 'in', 'out', 'in', 'out', 'in', 'out', 'out']
+    assert state == ['out', 'in', 'in', 'out', 'in', 'out', 'in', 'out', 'out']
 
 
 @pytest.mark.skipif(
