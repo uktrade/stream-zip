@@ -1386,7 +1386,7 @@ def test_async_stream_zip_equivalent_to_stream_unzip_zip_32_and_zip_64():
     async def test():
         assert b''.join(stream_zip(sync_files())) == await async_concat(async_stream_zip(async_files()))
 
-    asyncio.get_event_loop().run_until_complete(test())
+    asyncio.run(test())
 
 
 def test_async_exception_propagates():
@@ -1405,7 +1405,7 @@ def test_async_exception_propagates():
             pass
 
     with pytest.raises(Exception,  match='From generator'):
-        asyncio.get_event_loop().run_until_complete(test())
+        asyncio.run(test())
 
 
 def test_async_exception_from_bytes_propagates():
@@ -1424,7 +1424,7 @@ def test_async_exception_from_bytes_propagates():
             pass
 
     with pytest.raises(Exception,  match='From generator'):
-        asyncio.get_event_loop().run_until_complete(test())
+        asyncio.run(test())
 
 
 def test_async_stream_zip_does_stream():
@@ -1446,7 +1446,7 @@ def test_async_stream_zip_does_stream():
         async for chunk in async_stream_zip(async_files()):
             state.append('out')
 
-    asyncio.get_event_loop().run_until_complete(test())
+    asyncio.run(test())
     assert state == ['out', 'in', 'in', 'out', 'in', 'out', 'in', 'out', 'out']
 
 
@@ -1491,7 +1491,7 @@ def test_copy_of_context_variable_available_in_iterable():
         async for chunk in async_stream_zip(async_files()):
             pass
 
-    asyncio.get_event_loop().run_until_complete(test())
+    asyncio.run(test())
 
     assert var.get() == 'set-from-outer'
     assert inner_files == 'set-from-outer'
