@@ -19,9 +19,12 @@ jobs:
     steps:
       - name: "Checkout"
         uses: "actions/checkout@v3"
-      - uses: "actions/setup-python@v5"
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v6
         with:
+          version: "0.6.17"
           python-version: '${{ matrix.python-version }}'
+          activate-environment: true
       - name: "Install bsdcpio"
         run: |
           ./install-libarachive.sh
@@ -41,8 +44,8 @@ jobs:
           pip install ".[dev,ci]"
       - name: "Run type checking"
         run: |
-          mypy stream_zip --strict
+          uv run mypy stream_zip --strict
       - name: "Run tests"
         run: |
-          pytest --cov
+          uv run pytest --cov
       - uses: codecov/codecov-action@v3
