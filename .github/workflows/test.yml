@@ -14,14 +14,17 @@ jobs:
       matrix:
         # If changing how many times tests are run, must also change in codecov.yml
         # to ensure test coverage is reported only after all tests have finished
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - name: "Checkout"
         uses: "actions/checkout@v3"
-      - uses: "actions/setup-python@v5"
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v6
         with:
+          version: "0.6.17"
           python-version: '${{ matrix.python-version }}'
+          activate-environment: true
       - name: "Install bsdcpio"
         run: |
           ./install-libarachive.sh
@@ -41,8 +44,8 @@ jobs:
           pip install ".[dev,ci]"
       - name: "Run type checking"
         run: |
-          mypy stream_zip --strict
+          uv run mypy stream_zip --strict
       - name: "Run tests"
         run: |
-          pytest --cov
+          uv run pytest --cov
       - uses: codecov/codecov-action@v3
