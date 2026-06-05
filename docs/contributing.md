@@ -80,9 +80,9 @@ Changes are then submitted via a Pull Request (PR). To do this:
 5. Commit your change and push to your fork. Ideally the commit message will follow the [Conventional Commit specification](https://www.conventionalcommits.org/).
 
     ```bash
-    git add docs/recipies.md  # Repeat for each file changed
+    git add docs/recipes.md  # Repeat for each file changed
     git commit -m "docs: added a Django recipe"
-    gir push origin docs/add-django-recipe
+    git push origin docs/add-django-recipe
     ```
 
 6. Raise a PR at [https://github.com/uktrade/stream-zip/pulls](https://github.com/uktrade/stream-zip/pulls) against the `main` branch in stream-zip.
@@ -135,7 +135,7 @@ Changes are then submitted via a Pull Request (PR). To do this:
     ```bash
     git add stream_zip.py  # Repeat for each file changed
     git commit -m "feat: the bug description"
-    gir push origin fix/the-bug-description
+    git push origin fix/the-bug-description
     ```
 
 6. Raise a PR at [https://github.com/uktrade/stream-zip/pulls](https://github.com/uktrade/stream-zip/pulls) against the `main` branch in stream-zip.

@@ -18,7 +18,7 @@ for zipped_chunk in stream_zip(unzipped_files(), get_compressobj=lambda: zlib.co
     print(zipped_chunk)
 ```
 
-If you wish to disable compression entirely for these methods, you can pass `level=0` in the above. There is no way to customize the zlib object for the `ZIP_AUTO` method, other than passing `level` into it. See [Methods](/methods/) for details and other ways to not compress member files.
+If you wish to disable compression entirely for these methods, you can pass `level=0` in the above. There is no way to customize the zlib object for the `ZIP_AUTO` method, other than passing `level` into it. See [Compression methods](/api/methods/) for details and other ways to not compress member files.
 
 
 ## Custom chunk size
