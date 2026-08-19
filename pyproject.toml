@@ -32,7 +32,7 @@ dev = [
     'types-contextvars>=2.4.7.3; python_version<"3.7"',
 ]
 ci = [
-    "pycryptodome==3.10.1",
+    "pycryptodome==3.19.1",
     "stream-unzip==0.0.86",
     "pyzipper==0.3.6",
     # Type checking
