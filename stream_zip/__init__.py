@@ -96,7 +96,7 @@ class _ZIP_AUTO_TYPE():
 
         return _ZIP_AUTO_TYPE_INNER()
 
-# Sentinal object as a command that output buffer be flushed
+# Sentinel object as a command that output buffer be flushed
 # Extends from bytes to pass type checking
 class _Flusher(bytes):
     pass

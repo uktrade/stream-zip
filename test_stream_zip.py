@@ -102,7 +102,7 @@ def test_with_stream_unzip_zip_32_and_zip_64():
     ]
 
 
-def test_with_stream_unzip_with_no_compresion_32():
+def test_with_stream_unzip_with_no_compression_32():
     now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
@@ -123,7 +123,7 @@ def test_with_stream_unzip_with_no_compresion_32():
         NO_COMPRESSION_64,
     ],
 )
-def test_with_stream_unzip_with_no_compresion_known_crc_32(method):
+def test_with_stream_unzip_with_no_compression_known_crc_32(method):
     now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
@@ -144,7 +144,7 @@ def test_with_stream_unzip_with_no_compresion_known_crc_32(method):
         NO_COMPRESSION_64,
     ],
 )
-def test_with_stream_unzip_with_no_compresion_bad_crc_32(method):
+def test_with_stream_unzip_with_no_compression_bad_crc_32(method):
     now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
@@ -164,7 +164,7 @@ def test_with_stream_unzip_with_no_compresion_bad_crc_32(method):
         NO_COMPRESSION_64,
     ],
 )
-def test_with_stream_unzip_with_no_compresion_bad_size(method):
+def test_with_stream_unzip_with_no_compression_bad_size(method):
     now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
     mode = stat.S_IFREG | 0o600
 
