@@ -774,6 +774,29 @@ def test_chunk_sizes():
     [
         ZIP_32,
         ZIP_64,
+    ],
+)
+def test_output_ending_on_chunk_boundary_before_flush(method):
+    # Whatever the length of the first file, at some point the bytes between two
+    # flushes total an exact multiple of chunk_size. The output must still be complete.
+    now = datetime.strptime('2021-01-01 21:01:12', '%Y-%m-%d %H:%M:%S')
+    mode = stat.S_IFREG | 0o600
+    content = os.urandom(66000)
+
+    def files(length):
+        yield 'file-1', now, mode, method, (content[:length],)
+        yield 'file-2', now, mode, method, (b'-',)
+
+    for length in range(65000, 66000):
+        with ZipFile(BytesIO(b''.join(stream_zip(files(length))))) as f:
+            assert f.namelist() == ['file-1', 'file-2']
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        ZIP_32,
+        ZIP_64,
         NO_COMPRESSION_64(1, 2547889144),
         NO_COMPRESSION_32(1, 2547889144),
     ],

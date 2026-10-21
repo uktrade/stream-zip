@@ -129,16 +129,18 @@ def stream_zip(files: Iterable[MemberFile], chunk_size: int=65536,
     def evenly_sized(chunks: Iterable[bytes]) -> Iterable[bytes]:
         chunk = b''
         offset = 0
+        exhausted = False
         it = iter(chunks)
 
         def up_to(num: int) -> Iterable[bytes]:
-            nonlocal chunk, offset
+            nonlocal chunk, offset, exhausted
 
             while num:
                 if offset == len(chunk):
                     try:
                         chunk = next(it)
                     except StopIteration:
+                        exhausted = True
                         break
                     else:
                         offset = 0
@@ -150,11 +152,10 @@ def stream_zip(files: Iterable[MemberFile], chunk_size: int=65536,
                 num -= to_yield
                 yield chunk[offset - to_yield:offset]
 
-        while True:
+        while not exhausted:
             block = b''.join(up_to(chunk_size))
-            if not block:
-                break
-            yield block
+            if block:
+                yield block
 
     def get_zipped_chunks_uneven() -> Iterable[bytes]:
         local_header_signature = b'PK\x03\x04'
